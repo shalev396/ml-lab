@@ -1,0 +1,59 @@
+# ml-lab — ONE environment for every project (training notebooks, local Space dev).
+#
+# Works the same on a CPU laptop, a GPU PC, Google Colab and Hugging Face.
+# Code picks the device at runtime (cuda -> mps -> cpu); nothing here is GPU-specific.
+#
+# Rules:
+#   * Latest versions win: no upper pins, lower bounds only where an API is required.
+#   * torch / torchvision / tensorflow / numpy are left UNPINNED on purpose so Colab
+#     keeps its preinstalled CUDA builds (pip only installs them where missing).
+#   * Not listed on purpose (Colab pins them, upgrading breaks the runtime):
+#     keras, tf-keras, protobuf, jupyter/notebook, spaces.
+#
+# Install:  pip install -r requirements.txt
+
+# --- Deep learning frameworks ---
+torch
+torchvision
+tensorflow
+
+# --- Scientific stack ---
+numpy
+pandas
+pyarrow
+scipy
+scikit-learn>=1.9
+imbalanced-learn
+xgboost>=3.0
+statsmodels
+matplotlib
+seaborn
+pillow
+tqdm
+requests
+openpyxl
+
+# --- Hugging Face ecosystem ---
+huggingface_hub>=1.0
+safetensors
+transformers>=5
+accelerate
+datasets
+peft
+evaluate
+rouge-score
+sentencepiece
+sentence-transformers
+
+# --- Audio / video decoding (wheels bundle ffmpeg libs) ---
+av
+
+# --- Data sources ---
+kagglehub
+yfinance
+nltk
+
+# --- Apps + notebooks ---
+gradio>=6
+nbconvert
+ipykernel

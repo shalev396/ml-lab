@@ -1,0 +1,96 @@
+[submodule "age-estimator/model"]
+	path = age-estimator/model
+	url = https://huggingface.co/shalev396/age-estimator
+[submodule "california-housing/model"]
+	path = california-housing/model
+	url = https://huggingface.co/shalev396/california-housing
+[submodule "california-housing/space"]
+	path = california-housing/space
+	url = https://huggingface.co/spaces/shalev396/california-housing
+[submodule "credit-card-fraud/model"]
+	path = credit-card-fraud/model
+	url = https://huggingface.co/shalev396/credit-card-fraud
+[submodule "credit-card-fraud/space"]
+	path = credit-card-fraud/space
+	url = https://huggingface.co/spaces/shalev396/credit-card-fraud
+[submodule "elevator-maintenance/model"]
+	path = elevator-maintenance/model
+	url = https://huggingface.co/shalev396/elevator-maintenance
+[submodule "elevator-maintenance/space"]
+	path = elevator-maintenance/space
+	url = https://huggingface.co/spaces/shalev396/elevator-maintenance
+[submodule "email-spam-classifier/model"]
+	path = email-spam-classifier/model
+	url = https://huggingface.co/shalev396/email-spam-classifier
+[submodule "email-spam-classifier/space"]
+	path = email-spam-classifier/space
+	url = https://huggingface.co/spaces/shalev396/email-spam-classifier
+[submodule "eu-stock-forecasting/model"]
+	path = eu-stock-forecasting/model
+	url = https://huggingface.co/shalev396/eu-stock-forecasting
+[submodule "eu-stock-forecasting/space"]
+	path = eu-stock-forecasting/space
+	url = https://huggingface.co/spaces/shalev396/eu-stock-forecasting
+[submodule "face-recognition/model"]
+	path = face-recognition/model
+	url = https://huggingface.co/shalev396/face-recognition
+[submodule "face-recognition/space"]
+	path = face-recognition/space
+	url = https://huggingface.co/spaces/shalev396/face-recognition
+[submodule "fake-news-detector/model"]
+	path = fake-news-detector/model
+	url = https://huggingface.co/shalev396/fake-news-detector
+[submodule "fake-news-detector/space"]
+	path = fake-news-detector/space
+	url = https://huggingface.co/spaces/shalev396/fake-news-detector
+[submodule "fashion-image-search/model"]
+	path = fashion-image-search/model
+	url = https://huggingface.co/shalev396/fashion-image-search
+[submodule "fashion-image-search/space"]
+	path = fashion-image-search/space
+	url = https://huggingface.co/spaces/shalev396/fashion-image-search
+[submodule "flan-t5-dialogue-summarizer/model"]
+	path = flan-t5-dialogue-summarizer/model
+	url = https://huggingface.co/shalev396/flan-t5-dialogue-summarizer
+[submodule "flan-t5-dialogue-summarizer/space"]
+	path = flan-t5-dialogue-summarizer/space
+	url = https://huggingface.co/spaces/shalev396/flan-t5-dialogue-summarizer
+[submodule "foodvision-big/model"]
+	path = foodvision-big/model
+	url = https://huggingface.co/shalev396/foodvision-big
+[submodule "foodvision-big/space"]
+	path = foodvision-big/space
+	url = https://huggingface.co/spaces/shalev396/foodvision-big
+[submodule "foodvision-mini/model"]
+	path = foodvision-mini/model
+	url = https://huggingface.co/shalev396/foodvision-mini
+[submodule "foodvision-mini/space"]
+	path = foodvision-mini/space
+	url = https://huggingface.co/spaces/shalev396/foodvision-mini
+[submodule "purchase-propensity/model"]
+	path = purchase-propensity/model
+	url = https://huggingface.co/shalev396/purchase-propensity
+[submodule "purchase-propensity/space"]
+	path = purchase-propensity/space
+	url = https://huggingface.co/spaces/shalev396/purchase-propensity
+[submodule "stock-lstm-forecast/model"]
+	path = stock-lstm-forecast/model
+	url = https://huggingface.co/shalev396/stock-lstm-forecast
+[submodule "stock-lstm-forecast/space"]
+	path = stock-lstm-forecast/space
+	url = https://huggingface.co/spaces/shalev396/stock-lstm-forecast
+[submodule "tiny-shakespeare-chat/model"]
+	path = tiny-shakespeare-chat/model
+	url = https://huggingface.co/shalev396/tiny-shakespeare-chat
+[submodule "tiny-shakespeare-chat/space"]
+	path = tiny-shakespeare-chat/space
+	url = https://huggingface.co/spaces/shalev396/tiny-shakespeare-chat
+[submodule "video-quiz-generator/space"]
+	path = video-quiz-generator/space
+	url = https://huggingface.co/spaces/shalev396/video-quiz-generator
+[submodule "video-summarizer/space"]
+	path = video-summarizer/space
+	url = https://huggingface.co/spaces/shalev396/video-summarizer
+[submodule "age-estimator/space"]
+	path = age-estimator/space
+	url = https://huggingface.co/spaces/shalev396/age-estimator
