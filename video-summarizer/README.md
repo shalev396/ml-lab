@@ -78,8 +78,9 @@ than on the GPU. GPU timings were not measured here.
   (full docs in [space/README.md](space/README.md)).
 - **Model repo**: none. This is an application built from pretrained models. [`model/README.md`](model/README.md)
   lists them with their licenses.
-- ZeroGPU: the models are loaded on `cuda` at module level and each call runs in `@spaces.GPU(duration=120)`.
-  A visitor who is out of GPU quota gets a clear error rather than a CPU fallback, because the 1.5B LLM would take minutes on a shared CPU.
+- ZeroGPU: the models are loaded on `cuda` at module level and each call runs in `@spaces.GPU(duration=30)`.
+  If the GPU call fails for any reason (no quota, timeout, CUDA error) the small CPU pair answers in its own
+  process (`space/cpu_backend.py`).
 
 ## Project structure
 ```

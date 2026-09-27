@@ -126,8 +126,9 @@ was wrong (which is what the judge's answer agreement is there to catch).
 - **Space / API**: https://huggingface.co/spaces/shalev396/video-quiz-generator — `POST /gradio_api/call/predict`,
   inputs `[media file | null, transcript, n_questions, difficulty]`, outputs `[quiz, seconds, device]`
   (full contract in [`space/README.md`](space/README.md)). The interactive quiz and grading are UI-only events.
-- **Hardware**: ZeroGPU (`@spaces.GPU`, a time budget of 20 s + 4 s per question, at most 60 s). There is no
-  CPU fallback when a visitor is out of GPU quota. On CPU hardware the same code runs the small variant.
+- **Hardware**: ZeroGPU (`@spaces.GPU`, a time budget of 14 s + 2 s per question, at most 30 s). If the GPU
+  call fails for any reason (no quota, timeout, CUDA error) the CPU pipeline answers in its own process
+  (`space/cpu_backend.py`). On CPU hardware the same code runs the small variant.
 - **No model repo / Inference Endpoint**: there are no trained weights; every model is a pretrained Hub
   checkpoint, preloaded into the Space (`preload_from_hub`). [`model/`](model/) only documents them.
 

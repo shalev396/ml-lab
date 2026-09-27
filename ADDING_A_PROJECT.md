@@ -132,8 +132,11 @@ Cloning everything: `git clone --recurse-submodules https://github.com/shalev396
   - It loads `model.py` + weights from the model repo (`space_utils.import_model`).
   - Exactly one public endpoint, `api_name="predict"`, returning `[result, seconds, device]`. Every
     other event is `api_visibility="private"`.
-  - On a GPU (ZeroGPU) it runs through `@spaces.GPU`, with a CPU fallback when the visitor has no GPU
-    quota left.
+  - On a GPU (ZeroGPU) it runs through `@spaces.GPU(duration=5..30)`; if that call fails for ANY reason
+    (no quota, queue timeout, aborted task, CUDA OOM) a CPU copy answers (`space_utils.run_gpu_or_cpu`).
+    The CPU copy lives in `cpu_backend.py`, run by `space_utils.CpuWorker` in its own process on ZeroGPU
+    (a forward pass in the main process, even on the CPU, breaks every later `@spaces.GPU` call).
+    Space variables for testing: `FORCE_CPU=1` skips the GPU, `GPU_DURATION` overrides the duration.
 - [ ] `space_utils.py`: the same file in every Space (ZeroGPU shim, model loading, UI cards, CSS).
 - [ ] `requirements.txt`: lower bounds only. No `gradio` (it comes from `sdk_version`) and no `spaces`
       (preinstalled). PyTorch Spaces use `torch>=2.8,<2.14`, the ZeroGPU range.
@@ -275,34 +278,25 @@ tags: [ml-lab, <framework>, <task>]
 
 ### `space/app.py`
 ```python
-from space_utils import GPU, LAUNCH_KWARGS, card, header, import_model, is_quota_error, links, read_json  # first import
+from space_utils import (GPU, LAUNCH_KWARGS, CpuWorker, card, gpu_duration, header,  # first import
+                         import_model, links, read_json, run_gpu_or_cpu)
 
-import time
 import gradio as gr
 
 SLUG = "<slug>"
 M, MODEL_DIR = import_model(f"shalev396/{SLUG}")
-CPU = M.load(MODEL_DIR, "cpu")
-CUDA = M.load(MODEL_DIR, "cuda") if M.cuda_available() else None   # module level (ZeroGPU)
+CUDA = M.load(MODEL_DIR, "cuda") if M.cuda_available() else None   # GPU copy, module level (ZeroGPU)
+CPU = CpuWorker()                                                    # CPU copy: cpu_backend.py
 
 
-@GPU(duration=10)
+@GPU(duration=gpu_duration(10))
 def _predict_gpu(x):
     return CUDA.predict(x)
 
 
 def predict(x):
-    start = time.perf_counter()
-    if CUDA is not None:
-        try:
-            result, device = _predict_gpu(x), "gpu"
-        except gr.Error as err:            # out of ZeroGPU quota -> CPU
-            if not is_quota_error(err):
-                raise
-            result, device = CPU.predict(x), "cpu"
-    else:
-        result, device = CPU.predict(x), "cpu"
-    return result, round(time.perf_counter() - start, 4), device
+    """-> (result, seconds, device). GPU first, any GPU failure -> CPU copy."""
+    return run_gpu_or_cpu(_predict_gpu if CUDA is not None else None, CPU, "predict", x)
 
 
 with gr.Blocks(title="<Title>") as demo:
@@ -311,6 +305,18 @@ with gr.Blocks(title="<Title>") as demo:
 
 if __name__ == "__main__":
     demo.launch(**LAUNCH_KWARGS)
+```
+
+### `space/cpu_backend.py`
+```python
+from space_utils import import_model
+
+M, MODEL_DIR = import_model("shalev396/<slug>")
+MODEL = M.load(MODEL_DIR, "cpu")
+
+
+def predict(x):
+    return MODEL.predict(x)
 ```
 
 ### Notebook setup cells
