@@ -14,9 +14,9 @@
 | **Task** | Dialogue summarization (seq2seq), plus retrieval-augmented Q&A over a small knowledge base |
 | **Framework** | PyTorch · 🤗 Transformers · PEFT (LoRA, training only) |
 | **Architecture** | `google/flan-t5-base` (247.6M parameters, frozen) + LoRA r=16 on attention q/v (1,769,472 trained parameters) |
-| **Dataset** | [DialogSum](https://huggingface.co/datasets/knkarthick/dialogsum): 3,000 train / 200 validation / 200 test dialogues (seeded subsets) |
-| **Result** | <!-- result:start -->ROUGE-L = 35.32 (200 test dialogues), +14.63 over zero-shot flan-t5-base<!-- result:end --> |
-| **Runs on** | Space: ZeroGPU with CPU fallback · Training: GPU (recommended), CPU or Colab |
+| **Dataset** | [DialogSum](https://huggingface.co/datasets/knkarthick/dialogsum): 12,460 train / 500 validation / 500 test dialogues (the full splits) |
+| **Result** | <!-- result:start -->ROUGE-L = 36.60 (500 test dialogues), +16.34 over zero-shot flan-t5-base<!-- result:end --> |
+| **Runs on** | Space: ZeroGPU · Training: GPU (this model: Google Colab, A100), CPU or any Colab GPU |
 
 ## The problem
 Chat logs, support calls and meeting notes pile up faster than anyone can read them. A good summary says who wanted
@@ -33,8 +33,9 @@ answer in real documents.
   English dialogues about everyday topics (shopping, travel, work, doctors) with human-written third-person
   summaries. Speakers are anonymised as `#Person1#`, `#Person2#`. The splits are 12,460 train, 500 validation
   and 500 test dialogues, and every test dialogue has **3** independent human summaries.
-- Used here: a seeded subset of **3,000** train dialogues for fine-tuning, **200** validation dialogues for the
-  loss after each epoch, and **200** test dialogues, scored once at the end against all 3 references.
+- Used here: all of it. The **12,460** train dialogues for fine-tuning, the **500** validation dialogues for the
+  loss after each epoch (which also picks the checkpoint), and the **500** test dialogues, scored once at the
+  end against all 3 references.
 - Downloaded from the Hub and cached in `training/data/`. The fallback is the authors' JSONL files on
   [GitHub](https://github.com/cylnlp/dialogsum).
 - **Nova Gadgets knowledge base** (`model/assets/kb.json`): 41 short hand-written documents about a fictional
@@ -61,11 +62,14 @@ question ─► MiniLM-L6 embedding ─► cosine top-3 of 41 KB documents ─�
   embeddings and a dot product. No vector database is needed for 41 documents.
 
 ## Training & experiments
-- **Recipe**: AdamW with lr 1e-3, weight decay 0.01, linear decay to 0, batch size 8, 3 epochs (1,125 steps),
-  gradient clipping at 1.0, and per-batch dynamic padding (inputs ≤ 512 tokens, summaries ≤ 128).
+- **Recipe**: AdamW with lr 1e-3, weight decay 0.01, linear decay to 0, batch size 8, up to 6 epochs (1,558 steps
+  each), gradient clipping at 1.0, and per-batch dynamic padding (inputs ≤ 512 tokens, summaries ≤ 128).
 - **Precision**: float32, or bf16 autocast on GPUs with bf16 support (Ampere or newer). fp16 is never used: T5
-  overflows in fp16 and the loss is NaN from the first step. A Colab T4 therefore trains in float32.
-- **Experiments** (same 200 test dialogues, greedy decoding):
+  overflows in fp16 and the loss is NaN from the first step. A Colab T4 therefore trains in float32; the
+  deployed adapter was trained on a Colab A100 in bf16.
+- **Checkpoint choice**: after every epoch the validation loss decides; the adapter of the lowest-loss epoch is
+  kept, and training stops after 2 epochs without a new best, so a late overfitting epoch is never exported.
+- **Experiments** (same 500 test dialogues, greedy decoding):
   1. base FLAN-T5, zero-shot (the instruction only)
   2. base, one-shot (one solved train example in the prompt)
   3. base, few-shot (k=2)
@@ -76,21 +80,23 @@ question ─► MiniLM-L6 embedding ─► cosine top-3 of 41 KB documents ─�
   interrupted continues from the last finished epoch.
 
 ## Results
-ROUGE x100 on 200 DialogSum test dialogues, each scored against its 3 human summaries. Greedy decoding for
+ROUGE x100 on all 500 DialogSum test dialogues, each scored against its 3 human summaries. Greedy decoding for
 every variant.
 
 | variant | ROUGE-1 | ROUGE-2 | ROUGE-L | avg. words |
 |---|---|---|---|---|
-| base zero-shot | 24.41 | 7.31 | 20.69 | 13.9 |
-| base one-shot | 24.57 | 7.02 | 20.76 | 15.5 |
-| base few-shot (k=2) | 24.47 | 6.85 | 20.81 | 15.1 |
-| **LoRA fine-tuned** (deployed) | **43.69** | **17.76** | **35.32** | 22.0 |
+| base zero-shot | 23.53 | 7.21 | 20.27 | 14.2 |
+| base one-shot | 24.13 | 7.11 | 20.63 | 16.3 |
+| base few-shot (k=2) | 24.31 | 7.01 | 20.75 | 15.9 |
+| **LoRA fine-tuned** (deployed) | **45.00** | **19.04** | **36.60** | 23.4 |
 
-- Prompting alone barely moves the base model (one/few-shot +0.1 ROUGE-L); the adapter adds **+14.6 ROUGE-L**.
-- No overfitting: validation loss fell every epoch (1.834 before training → 1.124 → 1.116 → 1.096) and ended
-  level with the training loss (1.095).
+- Prompting alone barely moves the base model (one/few-shot +0.4 ROUGE-L); the adapter adds **+16.3 ROUGE-L**
+  and beats the base model on 92 % of the test dialogues.
+- No overfitting: validation loss fell from 1.83 before training to 1.06 after epoch 1 and then kept creeping
+  down to its lowest, about 1.00, at epoch 5; epoch 6 did not improve, so epoch 5 was kept. Training and
+  validation loss end at the same level.
 - RAG retriever on 18 held-out store questions: hit@1 0.94 · hit@3 1.00 · MRR 0.97.
-- Trained on an RTX 2080 Ti in fp32: 580 s (0.52 s/step), evaluation 663 s. Graphs and samples are in the
+- Trained on Google Colab (NVIDIA A100) in bf16: 6 epochs in 1,788 s (0.19 s/step), evaluation 268 s. Graphs and samples are in the
   [model card](https://huggingface.co/shalev396/flan-t5-dialogue-summarizer).
 
 ## Deployment
@@ -138,7 +144,7 @@ with a GPU runtime. Timings are in [training/README.md](training/README.md).
   languages, are out of domain.
 - A 250M-parameter model makes factual mistakes in its summaries: it swaps speakers, drops facts or adds details.
   ROUGE measures word overlap, not faithfulness.
-- 200 test dialogues give noisy estimates. Treat differences of a point or two between variants as ties.
+- 500 test dialogues still give somewhat noisy estimates. Treat differences of a point or two between variants as ties.
 - Inputs are truncated at 512 tokens, which affects about 2 % of DialogSum prompts.
 - The RAG part is a demonstration: a fictional store, 41 documents, and a summarization fine-tune as the answer
   generator. The retriever always returns 3 documents, even for off-topic questions.

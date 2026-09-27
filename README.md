@@ -52,7 +52,7 @@ Paste an email and a fine-tuned DistilBERT decides whether it belongs in the inb
 A bidirectional LSTM reads a headline and article and says how likely it is to be fake. It beat SimpleRNN, LSTM and GRU versions trained on the same data.
 
 ### 💬 [FLAN-T5 Dialogue Summarizer + RAG](flan-t5-dialogue-summarizer/)
-`248M params (1.8M LoRA)` · `PyTorch + PEFT` · `DialogSum` · **ROUGE-L 35.3 (+14.6 over base)**
+`248M params (1.8M LoRA)` · `PyTorch + PEFT` · `DialogSum` · **ROUGE-L 36.6 (+16.3 over base)**
 Summarizes conversations with a LoRA-tuned FLAN-T5 and answers store questions from a small knowledge base (RAG).
 
 ### 🎭 [Tiny Shakespeare Chat](tiny-shakespeare-chat/)

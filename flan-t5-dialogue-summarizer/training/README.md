@@ -33,8 +33,8 @@ the frozen base model zero-shot, one-shot and few-shot, plus the RAG retriever e
 | Run | What | Time |
 |---|---|---|
 | smoke | flan-t5-small, 64 train / 16 val / 12 test dialogues, 1 epoch (8 steps) | about 3-5 min on a CPU (measured, busy 20-thread desktop) |
-| full, CPU | flan-t5-base, 3,000 dialogues, 3 epochs = 1,125 steps + 4 × 200 test generations | many hours. See the measured seconds per step below |
-| full, GPU | same | measured on an RTX 2080 Ti (fp32): 580 s training (0.52 s/step) + 663 s evaluation |
+| full, CPU | flan-t5-base, 12,460 dialogues, up to 6 epochs × 1,558 steps + 4 × 500 test generations | days. See the measured seconds per step below |
+| full, GPU | same | measured on Google Colab, A100 (bf16): 1,788 s for 6 epochs (0.19 s/step) + 268 s evaluation. RTX 2080 Ti (fp32): 0.52 s/step, about 14 min per epoch |
 
 Measured on the development desktop CPU (6 threads, while other training jobs shared the machine): flan-t5-base
 LoRA took **30-145 s per step** at batch size 8, and greedy generation of 16 summaries took over 10 minutes. On

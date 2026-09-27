@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+import torch
 from matplotlib.figure import Figure
 
 import model as M  # ../model/model.py
@@ -44,6 +45,11 @@ def save_model(cfg: Config, peft_model, tokenizer) -> Path:
     return model_dir
 
 
+def _device_name(device: str) -> str:
+    """"cuda" -> the GPU's name (e.g. "NVIDIA A100-SXM4-40GB"), so the card says what the run used."""
+    return torch.cuda.get_device_name() if str(device).startswith("cuda") and torch.cuda.is_available() else str(device)
+
+
 def export(cfg: Config, *, history: dict, results: dict, retrieval: dict, splits: Splits, params: dict,
            device: str) -> dict:
     """After save_model: check the round trip, then write metrics.json, the card plots and the model card.
@@ -75,7 +81,7 @@ def export(cfg: Config, *, history: dict, results: dict, retrieval: dict, splits
         "device": device,
         "precision": history["precision"],
         "smoke": cfg.smoke,
-        "source": f"trained {utils.today()} with training/ ({device}{', smoke run' if cfg.smoke else ''})",
+        "source": f"trained {utils.today()} with training/ ({_device_name(device)}{', smoke run' if cfg.smoke else ''})",
         "hyperparameters": {k: v for k, v in cfg.to_dict().items() if k not in ("smoke", "smoke_base_model")},
         "samples": [{"dialogue": splits.test[i]["dialogue"], "reference": splits.test[i]["references"][0],
                      **{name: results[name]["predictions"][i] for name in ("base zero-shot", DEPLOYED)}}
