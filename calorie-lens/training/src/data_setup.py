@@ -45,7 +45,17 @@ def download(cfg) -> Path:
 
     snapshot_download(cfg.dataset_id, repo_type="dataset", local_dir=cfg.data_dir,
                       allow_patterns=["*.parquet", "*.csv", "README.md"])
+    if not (cfg.data_dir / "dishes.parquet").exists():
+        raise FileNotFoundError(f"{cfg.dataset_id} has no label tables yet (a build uploads them last): "
+                                "run the notebook's data cell with BUILD_DATA=1")
     return cfg.data_dir
+
+
+def published(dataset_id: str) -> bool:
+    """True once a full build is on the Hub: its label tables are the last files it uploads."""
+    from huggingface_hub import HfApi
+
+    return HfApi().file_exists(dataset_id, "dishes.parquet", repo_type="dataset")
 
 
 def to_arrow(data_dir: Path) -> dict[tuple[str, str], Path]:

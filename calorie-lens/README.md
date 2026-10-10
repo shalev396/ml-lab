@@ -17,7 +17,7 @@
 | **Dataset** | [Nutrition5k](https://github.com/google-research-datasets/Nutrition5k) (CC BY 4.0, cleaned: 5,005 dishes, 253 ingredients, overhead scans + side-angle frames) and [USDA FoodData Central](https://fdc.nal.usda.gov/) (public domain, ~470k food names), published as [shalev396/calorie-lens-data](https://huggingface.co/datasets/shalev396/calorie-lens-data) |
 | **Result** | Pending the first full training run (Colab GPU); the target is a calorie percent error below 18 % on the official overhead test split (paper's RGB baseline 26.1 %, best published RGB-only 14.1 %) |
 | **License** | MIT, Copyright (c) 2026 Shalev Ben Moshe; if the DINOv2 backbone wins, its fine-tuned weights also carry Apache-2.0 (NOTICE in the model repo) |
-| **Runs on** | Space: ZeroGPU with a CPU fallback · Training: Colab A100 / H100 / G4 (~1.6-2.7 h), dataset build on any CPU runtime |
+| **Runs on** | Space: ZeroGPU with a CPU fallback · Training: Colab A100 / H100 / G4 (~1.6-2.7 h, plus ~1-2 h to build the dataset in the first run) |
 
 ## The problem
 Counting calories from a photo has two hard parts: **what** is on the plate, and **how much** of it. The
@@ -122,9 +122,9 @@ calorie-lens/
 ```
 
 ## Reproduce
-1. Dataset (once, CPU runtime): open the notebook, `BUILD_DATA=1`, run sections 1-3.
-2. Training (GPU runtime): *Run all*; `PUSH_TO_HUB = True` uploads the model.
-3. Smoke test anywhere: `SMOKE_TEST=1 BUILD_DATA=1 jupyter nbconvert --to notebook --execute training/notebook.ipynb --output-dir /tmp`
+1. Colab secret `HF_TOKEN` with write access; open the notebook on a GPU runtime, `PUSH_TO_HUB = True`, *Run all*.
+   The first run builds and publishes the dataset before training (section 3a); later runs download it.
+2. Smoke test anywhere: `SMOKE_TEST=1 BUILD_DATA=1 jupyter nbconvert --to notebook --execute training/notebook.ipynb --output-dir /tmp`
 
 ## Limitations
 - All photos come from two cafeterias with a fixed overhead camera: the model's sense of scale is tied to that

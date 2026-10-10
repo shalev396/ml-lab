@@ -15,8 +15,9 @@ auxiliary depth head, and the result is exported as a Hugging Face model folder,
    runtime), 1b installs `../../requirements.txt`, 1c picks `device` (cuda -> mps -> cpu).
 2. **Config**: `Config()` from `src/config.py`, the `SMOKE_TEST` / `BUILD_DATA` switches, `PUSH_TO_HUB`,
    TF32 + cuDNN autotuning on CUDA.
-3. **Data**: 3a (only with `BUILD_DATA=1`) builds and publishes the dataset; 3b downloads it, converts it to
-   memory-mapped Arrow files and builds the loaders; a few augmented samples.
+3. **Data**: 3a builds and publishes the dataset (by itself while it is not on the Hub, or with
+   `BUILD_DATA=1`); 3b downloads it, converts it to memory-mapped Arrow files and builds the loaders; a few
+   augmented samples.
 4. **Load model**: `model_builder.build_model` for each backbone (parameter breakdown) and
    `engine.throughput`: images/s of the loader and of a full training step on this GPU.
 5. **Training**: 5a NutriText (vs TF-IDF kNN and the mean, plus zero-shot on the Nutrition5k names);
@@ -44,14 +45,16 @@ auxiliary depth head, and the result is exported as a Hugging Face model folder,
 | NutriText | own BPE tokenizer (8,000) + 4-layer d-256 transformer, ~470k USDA names (branded x 0.3), AdamW 1e-3, batch 512, <= 20 epochs, physically bounded outputs |
 
 ## Run it
-1. **Build the dataset once** (skip if `shalev396/calorie-lens-data` is already published): open the
-   notebook on a **CPU runtime**, set `os.environ["BUILD_DATA"] = "1"` in section 2 and run sections 1-3.
-   The probe in 3a prints the projected time; the build streams ~195 GB from Google Cloud Storage, keeps
-   ~8 GB, and uploads shards every 30 min (`HF_TOKEN` with write access as a Colab secret or env var). If the
-   runtime dies, run it again: it resumes from the manifest on the Hub.
-2. **Train** on a **GPU runtime** (A100 / H100 / G4): *Run all* with `BUILD_DATA=0`. Set
-   `PUSH_TO_HUB = True` to upload the result. After a disconnect, re-run: every experiment resumes from its
-   last finished epoch (`outputs/run/checkpoints/`, runtime disk).
+1. Add a Colab secret `HF_TOKEN` with write access (and notebook access).
+2. Open the notebook on a **GPU runtime** (A100 / H100 / G4), set `PUSH_TO_HUB = True` to upload the result,
+   and *Run all*.
+   - **First run:** section 3a builds the dataset before training, because `shalev396/calorie-lens-data`
+     is not on the Hub yet. It streams ~195 GB from Google Cloud Storage, keeps ~8 GB and uploads shards every
+     30 min; the probe prints the projected time. If the runtime dies, run it again: the build resumes from
+     the manifest on the Hub.
+   - **Later runs** download the published dataset. `BUILD_DATA=1` forces a rebuild.
+   - After a disconnect, re-run: every experiment resumes from its last finished epoch
+     (`outputs/run/checkpoints/`, runtime disk).
 - **Local:** `pip install -r ../../requirements.txt`, then open `notebook.ipynb` from this folder.
 - **Headless smoke test** (from `training/`, ~1 min on a desktop CPU once the mini build exists):
   ```bash
@@ -64,7 +67,7 @@ auxiliary depth head, and the result is exported as a Hugging Face model folder,
 | run | CPU (desktop) | GPU |
 |---|---|---|
 | smoke notebook (6 dishes, 2 epochs, NutriText 1 epoch) | ~65 s end to end (measured) | seconds |
-| dataset build (25,466 files, ~195 GB streamed) | decode-bound: ~25-40 min on 8 vCPU, 1.5-2.5 h on 2 vCPU (estimate; section 3a measures it) | not needed |
+| dataset build (25,466 files, ~195 GB streamed) | ~1.5 h on a 20-thread desktop at ~1 Gbit/s (measured on the first 400 dishes) | runs on the GPU runtime's CPUs in the first session, ~1-2 h (section 3a's probe projects it) |
 | full notebook (NutriText + E1 + E2 + E3) | not practical | ~2.7 h on an A100, ~1.6 h on an H100 (estimate from FLOPs; section 4 measures it) |
 
 ## Data

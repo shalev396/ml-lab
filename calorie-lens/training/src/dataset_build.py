@@ -163,10 +163,12 @@ def process_dish(dish_id: str, files: dict[str, str], frames: int = FRAMES_PER_C
     return out
 
 
-def probe(imagery: pd.DataFrame, n_streams: int = 20, workers: int | None = None) -> dict:
-    """Time n_streams side videos end to end and project the full build on this machine."""
-    side = imagery[imagery["kind"] == "side"].sample(n_streams, random_state=0)
+def probe(imagery: pd.DataFrame, n_streams: int | None = None, workers: int | None = None) -> dict:
+    """Time side videos end to end and project the full build on this machine. Defaults to two videos per
+    worker: with fewer videos than workers the pool is never full and the projection comes out too long."""
     workers = workers or default_workers()
+    n_streams = n_streams or max(20, 2 * workers)
+    side = imagery[imagery["kind"] == "side"].sample(n_streams, random_state=0)
     t, frames, nbytes = time.time(), [], 0
     with ProcessPoolExecutor(workers, initializer=_reset_http) as ex:
         results = list(ex.map(process_dish, side["dish_id"], [{r.key: r.path} for r in side.itertuples()]))
@@ -232,6 +234,20 @@ def _save_manifest(out_dir: Path, manifest: dict) -> None:
     tmp.replace(path)
 
 
+def check_write_access(repo_id: str) -> str:
+    """Fail at the start, not at the first upload 30 min in: publishing needs a token with write access."""
+    from huggingface_hub import HfApi
+
+    try:
+        info = HfApi().whoami()
+    except Exception as e:
+        raise PermissionError(f"publishing {repo_id} needs a Hugging Face token with write access: a Colab "
+                              "secret HF_TOKEN with notebook access, or `hf auth login`") from e
+    if info.get("auth", {}).get("accessToken", {}).get("role") == "read":
+        raise PermissionError(f"the Hugging Face token is read-only; publishing {repo_id} needs write access")
+    return info["name"]
+
+
 def publish(out_dir: Path, repo_id: str, paths: list[str], message: str) -> None:
     """Upload the given files (relative to out_dir) in one commit."""
     from huggingface_hub import HfApi
@@ -252,6 +268,8 @@ def build_images(out_dir: Path, labels: n5k_labels.Labels, imagery: pd.DataFrame
     are uploaded every publish_every_s seconds and at the end.
     """
     out_dir = Path(out_dir)
+    if repo_id:
+        print("publishing as", check_write_access(repo_id), flush=True)
     manifest = _load_manifest(out_dir, repo_id)
     split_of = labels.dishes.set_index("dish_id")["split"]
     files = {d: dict(zip(g["key"], g["path"])) for d, g in imagery.groupby("dish_id") if d in split_of.index}
