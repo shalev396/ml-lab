@@ -1,0 +1,254 @@
+ingr_id,name,fdc_id,fdc_name,fdc_source,macro_err,status
+1,cottage cheese,172179,"Cheese, cottage, creamed, large or small curd",sr_legacy,0.003,corrected
+2,strawberries,167762,"Strawberries, raw",sr_legacy,0.017,accepted
+3,garden salad,2706810,"Chicken or turkey garden salad, chicken and/or turkey, tomato and/or carrots, other vegetables, no dressing",fndds,0.217,corrected
+4,bacon,167914,"Pork, cured, bacon, cooked, baked",sr_legacy,0.022,corrected
+5,potatoes,170026,"Potatoes, flesh and skin, raw",sr_legacy,0.013,accepted
+6,caesar salad,2709591,"Caesar salad, with romaine, no dressing",fndds,0.283,corrected
+7,cauliflower,169986,"Cauliflower, raw",sr_legacy,0.015,accepted
+8,scrambled eggs,172187,"Egg, whole, cooked, scrambled",sr_legacy,0.003,accepted
+9,wild rice,168897,"Wild rice, cooked",sr_legacy,0.119,accepted
+10,steak,2705824,"Beef, steak, NFS",fndds,0.13,corrected
+11,cheese pizza,2708614,"Pizza, cheese, from restaurant or fast food, NS as to type of crust",fndds,0.012,corrected
+12,olives,2710088,"Olives, NFS",fndds,0.019,accepted
+13,berries,2709272,"Berries, frozen",fndds,0.056,accepted
+14,asparagus,168389,"Asparagus, raw",sr_legacy,0.008,accepted
+15,hash browns,170036,"Potatoes, hash brown, home-prepared",sr_legacy,0.193,corrected
+16,brussels sprouts,2709772,"Brussels sprouts, raw",fndds,0.002,accepted
+17,pasta salad,2708932,"Macaroni or pasta salad, made with mayonnaise",fndds,0.149,corrected
+18,turkey,171089,"Turkey, whole, light meat, meat and skin, cooked, roasted",sr_legacy,0.069,corrected
+19,bread,172686,"Bread, wheat",sr_legacy,0.097,corrected
+21,squash,2709808,"Summer squash, green, raw",fndds,0.074,accepted
+23,brown rice,168875,"Rice, brown, medium-grain, cooked (Includes foods for USDA's Food Distribution Program)",sr_legacy,0.036,corrected
+25,beef,2705822,"Beef, NFS",fndds,0.058,corrected
+26,white rice,2708403,"Rice, white, cooked, NS as to fat",fndds,0.008,accepted
+27,broccoli,170379,"Broccoli, raw",sr_legacy,0.047,accepted
+28,chicken,171477,"Chicken, broilers or fryers, breast, meat only, cooked, roasted",sr_legacy,0.002,corrected
+29,mixed greens,2709792,"Mixed salad greens, raw",fndds,0.204,accepted
+30,lettuce,169249,"Lettuce, green leaf, raw",sr_legacy,0.016,accepted
+31,cucumbers,169225,"Cucumber, peeled, raw",sr_legacy,0.095,accepted
+32,tomatoes,2709719,"Tomatoes, raw",fndds,0.217,corrected
+33,bell peppers,2258590,"Peppers, bell, red, raw",foundation,0.215,accepted
+34,celery,169988,"Celery, raw",sr_legacy,0.042,accepted
+35,blue cheese,172175,"Cheese, blue",sr_legacy,0.009,accepted
+36,spinach (raw),168462,"Spinach, raw",sr_legacy,0.006,accepted
+37,cantaloupe,2709226,"Cantaloupe, raw",fndds,0.028,accepted
+38,pineapple,2346398,"Pineapple, raw",foundation,0.06,accepted
+39,sausage,174578,"Pork sausage, link/patty, cooked, pan-fried",sr_legacy,0.135,corrected
+40,raspberries,167755,"Raspberries, raw",sr_legacy,0.012,accepted
+41,blackberries,2709273,"Blackberries, raw",fndds,0.012,accepted
+42,avocado,2709223,"Avocado, raw",fndds,0.016,accepted
+43,green beans,2709769,"Green beans, raw",fndds,0.098,accepted
+45,carrot,170393,"Carrots, raw",sr_legacy,0.021,corrected
+46,mushroom,169251,"Mushrooms, white, raw",sr_legacy,0.01,accepted
+47,corn,2709783,"Corn, raw",fndds,0.069,accepted
+48,ham,2705878,Ham,fndds,0.146,accepted
+49,fish,2706223,"Fish, raw",fndds,0.214,accepted
+50,tofu,172476,"Tofu, raw, regular, prepared with calcium sulfate",sr_legacy,0.013,accepted
+51,shrimp,175180,"Crustaceans, shrimp, cooked",sr_legacy,0.004,accepted
+52,cheese,2705704,"Cheese, NFS",fndds,0.186,corrected
+53,nuts,2707484,"Nuts, NFS",fndds,0.008,accepted
+54,apple,2709215,"Apple, raw",fndds,0.075,accepted
+55,banana,2709224,"Banana, raw",fndds,0.067,accepted
+56,kiwi,2709239,"Kiwi fruit, raw",fndds,0.038,accepted
+57,lemon,2709168,"Lemon, raw",fndds,0.007,accepted
+58,orange,2709171,"Orange, raw",fndds,0.026,accepted
+59,oatmeal,2708380,"Oatmeal, NFS",fndds,0.137,accepted
+60,tortilla,2707823,"Tortilla, corn",fndds,0.016,accepted
+61,potato chips,2709421,"Potato chips, NFS",fndds,0.032,accepted
+62,noodles,2708352,"Noodles, cooked",fndds,0.005,accepted
+63,bean(seed),2707349,"Beans, from dried, NS as to type, no added fat",fndds,0.02,corrected
+67,syrup,2710272,"Syrup, NFS",fndds,0.013,accepted
+70,figs,326905,"Figs, dried, uncooked",foundation,0.192,accepted
+72,kale,2709599,"Kale, raw",fndds,0.227,accepted
+73,radishes,169276,"Radishes, raw",sr_legacy,0.003,accepted
+74,pasta,2708357,"Pasta, cooked",fndds,0.127,accepted
+76,brisket,2705851,"Beef, brisket",fndds,0.237,accepted
+77,almonds,170567,"Nuts, almonds",sr_legacy,0.027,accepted
+80,turkey bacon,2706135,"Turkey bacon, cooked",fndds,0.075,accepted
+81,pickles,2710097,"Pickles, NFS",fndds,0.111,accepted
+82,pecans,170182,"Nuts, pecans",sr_legacy,0.007,accepted
+87,coleslaw,170300,"Fast foods, coleslaw",sr_legacy,0.013,accepted
+89,spaghetti,2708357,"Pasta, cooked",fndds,0.015,corrected
+92,wine,2710688,"Wine, red",fndds,0.007,accepted
+94,onions,170000,"Onions, raw",sr_legacy,0.007,accepted
+95,artichokes,2709766,Artichoke,fndds,0.088,accepted
+98,multigrain bread,2707777,"Bread, multigrain",fndds,0.328,accepted
+100,oats,2708489,"Oats, raw",fndds,0.076,accepted
+101,leeks,169246,"Leeks, (bulb and lower leaf-portion), raw",sr_legacy,0.002,accepted
+102,snow peas,170010,"Peas, edible-podded, raw",sr_legacy,0.325,corrected
+105,grilled chicken,2705967,"Chicken breast, grilled without sauce, skin eaten",fndds,0.129,corrected
+110,barbecue sauce,2709750,Barbecue sauce,fndds,0.009,accepted
+112,honeydew melons,169911,"Melons, honeydew, raw",sr_legacy,0.017,accepted
+113,ketchup,2709733,Ketchup,fndds,0.062,accepted
+116,mayonnaise,2710204,"Mayonnaise, regular",fndds,0.008,accepted
+117,tacos,170332,"TACO BELL, Original Taco with beef, cheese and lettuce",sr_legacy,0.013,accepted
+121,watermelon,2709270,"Watermelon, raw",fndds,0.013,accepted
+122,garlic,169230,"Garlic, raw",sr_legacy,0.002,accepted
+124,walnuts,170187,"Nuts, walnuts, english",sr_legacy,0.009,accepted
+126,mustard,2710085,Mustard,fndds,0.074,accepted
+128,egg whites,172183,"Egg, white, raw, fresh",sr_legacy,0.028,accepted
+129,raisins,2709212,Raisins,fndds,0.054,accepted
+133,shallots,170499,"Shallots, raw",sr_legacy,0.413,accepted
+134,biscuits,2707805,"Biscuit, wheat",fndds,0.051,accepted
+136,poached eggs,172186,"Egg, whole, cooked, poached",sr_legacy,0.015,accepted
+137,succotash,169300,"Succotash, (corn and limas), raw",sr_legacy,0.008,accepted
+140,caesar dressing,2710199,Caesar dressing,fndds,0.559,corrected
+141,tuna salad,175160,"Fish, tuna salad",sr_legacy,0.008,accepted
+148,parmesan cheese,170848,"Cheese, parmesan, hard",sr_legacy,0.108,corrected
+152,cabbage,169975,"Cabbage, raw",sr_legacy,0.174,accepted
+153,bulgur,170688,"Bulgur, dry",sr_legacy,0.009,accepted
+154,brown sugar,2710260,"Sugar, brown",fndds,0.005,accepted
+155,chicken thighs,2706038,"Chicken thigh, stewed, skin not eaten",fndds,0.014,accepted
+159,apple cider,2709319,Apple cider,fndds,0.007,accepted
+161,olive oil,2710186,Olive oil,fndds,0.004,accepted
+162,parsnips,170417,"Parsnips, raw",sr_legacy,0.0,accepted
+166,grapefruit juice,173039,"Grapefruit juice, white, raw",sr_legacy,0.003,accepted
+168,lasagna,2708750,Lasagna with meat,fndds,0.026,accepted
+174,bread crumbs,174928,"Bread, crumbs, dry, grated, plain",sr_legacy,0.013,accepted
+177,tempeh,174272,Tempeh,sr_legacy,0.057,accepted
+179,eggs,748967,"Eggs, Grade A, Large, egg whole",foundation,0.043,accepted
+180,rice noodles,168914,"Rice noodles, cooked",sr_legacy,0.091,accepted
+185,collards,170406,"Collards, raw",sr_legacy,0.01,accepted
+187,chickpeas,2707416,"Chickpeas, from dried, no added fat",fndds,0.01,accepted
+189,vinegar,2709351,Vinegar,fndds,0.207,accepted
+192,yam,170071,"Yam, raw",sr_legacy,0.036,accepted
+194,fried rice,2708952,"Rice, fried, NFS",fndds,0.137,accepted
+196,cod,2706245,"Fish, cod, steamed",fndds,0.013,accepted
+200,buttermilk,2705393,Buttermilk,fndds,0.042,accepted
+201,blueberries,2346411,"Blueberries, raw",foundation,0.005,accepted
+203,chili,170106,"Peppers, hot chili, red, raw",sr_legacy,0.015,accepted
+205,corn on the cob,168401,"Corn, sweet, yellow, frozen, kernels on cob, cooked, boiled, drained, without salt",sr_legacy,0.15,corrected
+208,ice cream cones,175000,"Ice cream cones, cake or wafer-type",sr_legacy,0.013,accepted
+213,pears,169118,"Pears, raw",sr_legacy,0.017,accepted
+214,seeds,2707589,Mixed seeds,fndds,0.196,corrected
+217,lamb,2705907,"Lamb, ground",fndds,0.03,accepted
+220,pita bread,2707616,"Bread, pita",fndds,0.019,accepted
+221,vegetable oil,2710180,"Vegetable oil, NFS",fndds,0.004,accepted
+228,cornmeal,168922,"Cornmeal, degermed, enriched, white",sr_legacy,0.008,accepted
+238,hominy,169701,"Hominy, canned, white",sr_legacy,0.006,accepted
+243,mozzarella cheese,170845,"Cheese, mozzarella, whole milk",sr_legacy,0.16,corrected
+244,chicken breast,171477,"Chicken, broilers or fryers, breast, meat only, cooked, roasted",sr_legacy,0.003,accepted
+245,wheat bread,2707709,"Bread, whole wheat",fndds,0.038,accepted
+249,cashews,2707493,"Cashews, NFS",fndds,0.071,accepted
+251,tortilla chips,2708202,"Tortilla chips, plain",fndds,0.125,accepted
+252,broth,171562,"Soup, chicken broth or bouillon, dry",sr_legacy,0.024,accepted
+254,mashed potatoes,170699,"Fast foods, potato, mashed",sr_legacy,0.02,accepted
+257,brownies,174949,"Cookies, brownies, prepared from recipe",sr_legacy,0.004,accepted
+262,yogurt,330137,"Yogurt, Greek, plain, nonfat",foundation,0.02,accepted
+264,bagels,167533,"Bagels, wheat",sr_legacy,0.006,accepted
+273,sandwiches,2706880,"Sandwich, NFS",fndds,0.204,corrected
+275,frozen yogurt,2705451,"Frozen yogurt, NFS",fndds,0.214,corrected
+279,omelets,172185,"Egg, whole, cooked, omelet",sr_legacy,0.008,accepted
+281,edamame,168411,"Edamame, frozen, prepared",sr_legacy,0.042,accepted
+287,toast,172687,"Bread, wheat, toasted",sr_legacy,0.005,accepted
+290,cheddar cheese,328637,"Cheese, cheddar",foundation,0.089,accepted
+291,salt,173468,"Salt, table",sr_legacy,0.0,accepted
+294,granola,167542,"Snacks, granola bars, hard, plain",sr_legacy,0.011,corrected
+297,pepperoni,2706185,"Pepperoni, NFS",fndds,0.151,accepted
+306,croutons,172751,"Croutons, plain",sr_legacy,0.01,accepted
+312,pepper,170497,"Peppers, hot chili, green, raw",sr_legacy,0.003,accepted
+314,sourdough bread,2707646,"Bread, sour dough",fndds,0.1,accepted
+316,roast chicken,173635,"Chicken, roasting, meat and skin, cooked, roasted",sr_legacy,0.012,accepted
+318,flour,168894,"Wheat flour, white, all-purpose, enriched, bleached",sr_legacy,0.006,corrected
+319,feta cheese,173420,"Cheese, feta",sr_legacy,0.025,accepted
+320,black beans,2707361,"Black beans, from dried, no added fat",fndds,0.012,accepted
+321,water,2710706,"Water, NFS",fndds,0.0,accepted
+328,sugar,2710257,"Sugar, NFS",fndds,0.069,accepted
+332,salmon,2706284,"Fish, salmon, raw",fndds,0.113,accepted
+335,eggplant,169228,"Eggplant, raw",sr_legacy,0.008,accepted
+337,waffles,175039,"Waffles, plain, prepared from recipe",sr_legacy,0.005,accepted
+338,vinaigrette,171417,"Salad dressing, home recipe, vinegar and oil",sr_legacy,0.022,accepted
+341,cream,2346386,"Cream, heavy",foundation,0.106,accepted
+342,turnips,170465,"Turnips, raw",sr_legacy,0.099,accepted
+347,baby carrots,2258587,"Carrots, baby, raw",foundation,0.056,accepted
+349,mangos,169910,"Mangos, raw",sr_legacy,0.008,accepted
+357,lentils,2707425,"Lentils, from dried, no added fat",fndds,0.006,accepted
+359,honey,2710281,Honey,fndds,0.001,accepted
+364,sunflower seeds,2707585,"Sunflower seeds, NFS",fndds,0.107,accepted
+367,lime,2709170,"Lime, raw",fndds,0.001,accepted
+371,dumplings,169779,"Dumpling, potato- or cheese-filled, frozen",sr_legacy,0.151,accepted
+372,chilaquiles,2708505,Chilaquiles,fndds,0.106,accepted
+375,fruit salad,2709287,"Fruit salad, fresh or raw, excluding citrus fruits, no dressing",fndds,0.055,accepted
+377,quinoa,168917,"Quinoa, cooked",sr_legacy,0.005,accepted
+380,pizza,2708614,"Pizza, cheese, from restaurant or fast food, NS as to type of crust",fndds,0.01,corrected
+385,curries,2706437,Chicken curry,fndds,0.273,corrected
+392,pepperoni pizza,2708638,"Pizza with pepperoni, from restaurant or fast food, NS as to type of crust",fndds,0.007,corrected
+393,teriyaki sauce,2707445,Teriyaki sauce,fndds,0.012,accepted
+402,tuna,2706308,"Fish, tuna, raw",fndds,0.091,accepted
+409,greek salad,2709830,"Greek Salad, no dressing",fndds,0.334,accepted
+413,pilaf,2709077,Rice pilaf,fndds,0.17,accepted
+415,cereal,2708448,"Cereal, O's, plain",fndds,0.043,accepted
+421,ground turkey,2706133,"Turkey, ground",fndds,0.135,accepted
+425,goat cheese,173435,"Cheese, goat, soft type",sr_legacy,0.007,accepted
+428,white wine,2710689,"Wine, white",fndds,0.007,accepted
+433,roasted potatoes,2709402,"Potato, roasted, NFS",fndds,0.151,accepted
+434,sour cream,171257,"Cream, sour, cultured",sr_legacy,0.008,accepted
+437,sweet potato,168484,"Sweet potato, cooked, boiled, without skin",sr_legacy,0.073,accepted
+440,grapes,2709237,"Grapes, raw",fndds,0.077,accepted
+441,butter,2710154,"Butter, NFS",fndds,0.024,accepted
+442,hummus,2707402,"Hummus, plain",fndds,0.206,accepted
+444,dates,2709203,Date,fndds,0.005,accepted
+448,jalapenos,2710096,"Peppers, jalapenos",fndds,0.053,accepted
+455,cookies,2707899,"Cookie, NFS",fndds,0.004,accepted
+456,barley,170285,"Barley, pearled, cooked",sr_legacy,0.012,accepted
+457,sun dried tomatoes,2709727,Sun-dried tomatoes,fndds,0.005,accepted
+462,pork,2705862,"Pork, NFS",fndds,0.144,corrected
+463,beets,2709770,"Beets, raw",fndds,0.028,accepted
+466,pistachios,2707527,"Pistachio nuts, NFS",fndds,0.005,accepted
+471,cherry tomatoes,2709719,"Tomatoes, raw",fndds,0.05,accepted
+472,couscous,169700,"Couscous, cooked",sr_legacy,0.011,accepted
+473,cranberries,171722,"Cranberries, raw",sr_legacy,0.014,accepted
+475,salsa,2709738,"Salsa, red",fndds,0.035,accepted
+476,almond milk,2705410,"Almond milk, NFS",fndds,0.144,accepted
+481,flatbread,2707616,"Bread, pita",fndds,0.001,accepted
+484,chicken salad,2706801,Chicken or turkey salad with egg,fndds,0.081,accepted
+485,zucchini,170534,"Squash, summer, zucchini, includes skin, cooked, boiled, drained, with salt",sr_legacy,0.012,accepted
+487,crepes,2708341,"Crepe, NFS",fndds,0.259,corrected
+494,jams,169641,Jams and preserves,sr_legacy,0.013,accepted
+495,cream cheese,173418,"Cheese, cream",sr_legacy,0.006,accepted
+498,orange juice,169099,"Orange juice, canned, unsweetened",sr_legacy,0.014,accepted
+502,milk,2705384,"Milk, NFS",fndds,0.038,accepted
+506,pinto beans,2707373,"Pinto beans, from dried, no added fat",fndds,0.01,accepted
+507,mandarin oranges,169105,"Tangerines, (mandarin oranges), raw",sr_legacy,0.009,accepted
+508,soy sauce,2707442,Soy sauce,fndds,0.007,accepted
+510,chicken apple sausage,2706200,Turkey or chicken sausage,fndds,0.245,accepted
+511,spinach (cooked),168463,"Spinach, cooked, boiled, drained, without salt",sr_legacy,0.064,corrected
+512,kimchi,2710077,Kimchi,fndds,0.297,accepted
+513,millet,2708377,Millet,fndds,0.003,accepted
+514,wheat berry,170287,"Bulgur, cooked",sr_legacy,0.121,corrected
+515,arugula,169387,"Arugula, raw",sr_legacy,0.009,accepted
+516,rosemary,173473,"Rosemary, fresh",sr_legacy,0.037,accepted
+517,chard,2709574,"Chard, raw",fndds,0.002,accepted
+518,thyme,173470,"Thyme, fresh",sr_legacy,0.022,accepted
+519,oregano,171328,"Spices, oregano, dried",sr_legacy,0.018,accepted
+520,lemon juice,167747,"Lemon juice, raw",sr_legacy,0.124,accepted
+521,basil,2709780,"Basil, raw",fndds,0.181,accepted
+522,tatsoi,170390,"Cabbage, chinese (pak-choi), raw",sr_legacy,0.2,corrected
+523,cilantro,2709782,"Cilantro, raw",fndds,0.011,accepted
+524,parsley,2709796,"Parsley, raw",fndds,0.013,accepted
+525,bok choy,2685572,"Cabbage, bok choy, raw",foundation,0.141,accepted
+526,mustard greens,169256,"Mustard greens, raw",sr_legacy,0.007,accepted
+527,chive,2709781,"Chives, raw",fndds,0.008,accepted
+528,celery root,170400,"Celeriac, raw",sr_legacy,0.0,accepted
+529,chayote squash,170403,"Chayote, fruit, cooked, boiled, drained, without salt",sr_legacy,0.007,accepted
+530,endive,168412,"Endive, raw",sr_legacy,0.008,accepted
+531,pumpkin seeds,168601,"Seeds, pumpkin and squash seeds, whole, roasted, with salt added",sr_legacy,0.012,accepted
+532,pesto,2710175,Pesto sauce,fndds,0.15,accepted
+534,country rice,2708407,"Rice, white, cooked, fat added, NS as to fat type",fndds,0.233,corrected
+535,green onions,2709794,"Onions, green, raw",fndds,0.014,accepted
+536,banana with peel,2709224,"Banana, raw",fndds,0.194,accepted
+537,orange with peel,169919,"Oranges, raw, with peel",sr_legacy,0.33,corrected
+538,jicama,2709787,"Jicama, raw",fndds,0.009,accepted
+539,nopales,168571,"Nopales, raw",sr_legacy,0.012,accepted
+540,ginger,169231,"Ginger root, raw",sr_legacy,0.012,accepted
+541,tomatillo,168566,"Tomatillos, raw",sr_legacy,0.012,accepted
+542,white beans,2707355,"White beans, from dried, no added fat",fndds,0.013,accepted
+543,chia seeds,2707590,Chia seeds,fndds,0.009,accepted
+545,greek yogurt,330137,"Yogurt, Greek, plain, nonfat",foundation,0.02,accepted
+546,balsamic vinegar,172241,"Vinegar, balsamic",sr_legacy,0.002,accepted
+549,pizza dough,172675,"Bread, french or vienna (includes sourdough)",sr_legacy,0.292,corrected
+550,fennel,2709779,"Fennel bulb, raw",fndds,0.013,accepted
+551,pizza sauce,172880,"Sauce, pizza, canned, ready-to-serve",sr_legacy,0.303,corrected
+553,nut cheese,169901,"Cheese, american cheddar, imitation",sr_legacy,0.316,corrected
+555,oil,2710180,"Vegetable oil, NFS",fndds,0.004,corrected

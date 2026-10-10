@@ -44,6 +44,7 @@ evaluate
 rouge-score
 sentencepiece
 sentence-transformers
+tokenizers
 
 # --- Audio / video decoding (wheels bundle ffmpeg libs) ---
 av

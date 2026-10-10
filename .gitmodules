@@ -94,3 +94,9 @@
 [submodule "age-estimator/space"]
 	path = age-estimator/space
 	url = https://huggingface.co/spaces/shalev396/age-estimator
+[submodule "calorie-lens/model"]
+	path = calorie-lens/model
+	url = https://huggingface.co/shalev396/calorie-lens
+[submodule "calorie-lens/space"]
+	path = calorie-lens/space
+	url = https://huggingface.co/spaces/shalev396/calorie-lens
