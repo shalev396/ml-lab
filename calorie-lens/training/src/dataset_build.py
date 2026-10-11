@@ -30,6 +30,7 @@ IMAGERY = "nutrition5k_dataset/imagery/"
 CAMERAS = ("A", "B", "C", "D")
 SIDE_SIZE = (910, 512)                    # (width, height)
 FRAMES_PER_CAMERA = 5
+MAX_SIDE_FRAMES = 32_767                  # frame indices are int16 in the shards; a sweep has ~40-150 frames
 SPLIT_FILES = {"train": "train", "val": "validation", "test": "test"}
 MANIFEST = "build/manifest.json"
 
@@ -102,14 +103,16 @@ def pick_frames(n: int, k: int = FRAMES_PER_CAMERA, margin: float = 0.1) -> list
     return sorted({int(round(x)) for x in np.linspace(lo, hi, k)})
 
 
-def decode_side(data: bytes, k: int = FRAMES_PER_CAMERA, size=SIDE_SIZE, quality: int = 90
-                ) -> tuple[int, list[tuple[int, bytes]]]:
+def decode_side(data: bytes, k: int = FRAMES_PER_CAMERA, size=SIDE_SIZE, quality: int = 90,
+                max_frames: int = MAX_SIDE_FRAMES) -> tuple[int, list[tuple[int, bytes]]]:
     """Raw H.264 stream -> (frame count, [(frame index, JPEG bytes)]) for the picked frames."""
     import av
     from PIL import Image
 
     with av.open(io.BytesIO(data), format="h264") as c:     # pass 1: count frames (no decoding)
         n = sum(1 for p in c.demux(video=0) if p.size)
+    if n > max_frames:          # a camera left recording (dish_1568048053 camera_C: 2.4 GB), not a sweep
+        raise ValueError(f"{n} frames, more than a turntable sweep (max {max_frames})")
     keep, out = set(pick_frames(n, k)), []
     with av.open(io.BytesIO(data), format="h264") as c:
         c.streams.video[0].thread_type = "AUTO"
@@ -226,6 +229,16 @@ def _load_manifest(out_dir: Path, repo_id: str | None) -> dict:
     return {"done": {}, "shards": {}, "uploaded": [], "errors": {}}
 
 
+def _drop_unlisted_shards(out_dir: Path, manifest: dict) -> None:
+    """A build that died inside a flush can leave a shard the manifest never recorded. Delete it: its
+    dishes are not marked done, so this run redoes them (and would otherwise reuse the file name)."""
+    for path in out_dir.glob("*/*.parquet"):
+        name, _, index = path.stem.rpartition("-")
+        if int(index) >= manifest["shards"].get(f"{path.parent.name}/{name}", 0):
+            print("removing unrecorded shard", path.relative_to(out_dir), flush=True)
+            path.unlink()
+
+
 def _save_manifest(out_dir: Path, manifest: dict) -> None:
     path = out_dir / MANIFEST
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -271,6 +284,7 @@ def build_images(out_dir: Path, labels: n5k_labels.Labels, imagery: pd.DataFrame
     if repo_id:
         print("publishing as", check_write_access(repo_id), flush=True)
     manifest = _load_manifest(out_dir, repo_id)
+    _drop_unlisted_shards(out_dir, manifest)
     split_of = labels.dishes.set_index("dish_id")["split"]
     files = {d: dict(zip(g["key"], g["path"])) for d, g in imagery.groupby("dish_id") if d in split_of.index}
     todo = [d for d in (dishes if dishes is not None else sorted(files)) if d in files and d not in manifest["done"]]
