@@ -260,6 +260,35 @@ def bootstrap_ci(p: Preds, labels, blend: float = 1.0, n: int = 1000, seed: int 
 
 
 # --------------------------------------------------------------------------- training
+def file_log(path):
+    """print() that also appends each line, timestamped, to `path`: the training log survives cleared cell
+    outputs, a closed browser tab and kernel restarts. Inside a notebook it also appends the traceback of
+    any cell that fails."""
+    import traceback
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    def append(msg: str) -> None:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {msg}\n")
+
+    def log(msg: str) -> None:
+        print(msg)
+        append(msg)
+
+    try:
+        from IPython import get_ipython
+        shell = get_ipython()
+    except ImportError:
+        shell = None
+    if shell is not None:
+        def on_error(shell, etype, value, tb, tb_offset=None):
+            append("ERROR\n" + "".join(traceback.format_exception(etype, value, tb)).rstrip())
+            shell.showtraceback((etype, value, tb), tb_offset=tb_offset)
+        shell.set_custom_exc((Exception,), on_error)
+    return log
+
+
 def run_key(cfg, name: str) -> str:
     """Checkpoints only resume into the same run (same experiment + every setting that changes it)."""
     # micro_batch is left out on purpose: a resume may land on another GPU type (same effective batch)
@@ -379,7 +408,8 @@ def train(tnet, loaders, cfg, device, name: str, log=print) -> dict:
                         "seconds": round(time.time() - te, 1), "lr_head": opt.param_groups[-1]["lr"]})
         log(f"[{name}] epoch {epoch}: train {train_loss.get('total', float('nan')):.4f}  val score {score:.2f} "
             f"(overhead kcal {val.get('overhead', {}).get('kcal_pmae', float('nan')):.2f}%, "
-            f"side dish kcal {val.get('side_dish', {}).get('kcal_pmae', float('nan')):.2f}%)  {time.time() - te:.0f}s")
+            f"side dish kcal {val.get('side_dish', {}).get('kcal_pmae', float('nan')):.2f}%)  {time.time() - te:.0f}s"
+            + (f"  peak GPU {torch.cuda.max_memory_allocated() / 2 ** 30:.1f} GB" if device.type == "cuda" else ""))
         if score < best["score"]:
             best = {"score": score, "epoch": epoch, "val": val,
                     "state": {k: v.detach().cpu().clone() for k, v in ema.module.state_dict().items()}}

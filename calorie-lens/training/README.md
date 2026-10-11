@@ -55,6 +55,10 @@ auxiliary depth head, and the result is exported as a Hugging Face model folder,
    - **Later runs** download the published dataset. `BUILD_DATA=1` forces a rebuild.
    - After a disconnect, re-run: every experiment resumes from its last finished epoch
      (`outputs/run/checkpoints/`, runtime disk).
+   - Every training line and the traceback of any failed cell also go to `outputs/run/train.log`
+     (`!tail -50 outputs/run/train.log`), which survives cleared outputs and kernel restarts.
+   - Checkpoints and log live on the runtime disk: a runtime Colab deletes (for example after an idle timeout
+     while the PC sleeps, on plans without background execution) loses them, and the run starts over.
 - **Local:** `pip install -r ../../requirements.txt`, then open `notebook.ipynb` from this folder.
 - **Headless smoke test** (from `training/`, ~1 min on a desktop CPU once the mini build exists):
   ```bash
