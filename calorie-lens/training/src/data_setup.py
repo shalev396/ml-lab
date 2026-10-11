@@ -183,7 +183,8 @@ class N5kImages(Dataset):
             if overhead:
                 from PIL import Image
 
-                d = np.asarray(Image.open(io.BytesIO(store.get("depth", row))), dtype=np.int32)
+                png = store.get("depth", row)          # empty for dish_1564159636: a 0-byte file in the bucket
+                d = np.asarray(Image.open(io.BytesIO(png)), dtype=np.int32) if png else np.zeros(img.shape[-2:], np.int32)
                 d = np.where((d >= DEPTH_VALID[0]) & (d <= DEPTH_VALID[1]), d, 0).astype(np.int16)
                 item["depth"] = fit_canvas(torch.from_numpy(d)[None], self.size, (0,), mode="nearest")[0]
             else:
