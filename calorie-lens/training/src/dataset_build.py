@@ -197,6 +197,8 @@ def _features(table: str):
 
     if table == "overhead":
         return Features({"dish_id": Value("string"), "image": Image(), "depth": Image()})
+    if table == "flavoria":
+        return Features({"dish_id": Value("string"), "image": Image()})
     return Features({"dish_id": Value("string"), "camera": Value("string"), "frame": Value("int16"),
                      "n_frames": Value("int16"), "image": Image()})
 

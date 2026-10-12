@@ -4,11 +4,13 @@
   to_arrow()        once per session: the parquet shards -> one uncompressed Arrow IPC file per
                     (table, split) with just the JPEG / PNG bytes. Memory-mapped, so every DataLoader
                     worker reads it zero-copy (no per-worker copy of a list of bytes objects)
-  Labels            per-dish targets: grams of each of the K ingredients and the five totals
+  Labels            per-dish targets: grams of each of the K ingredients and the five totals, and which of
+                    them are known (Nutrition5k: all; Flavoria plates: the weight and the mapped ingredients)
   N5kImages         one sample = one image: decode (libjpeg-turbo) + fit into the canvas, uint8
-  MixtureSampler    a fixed number of samples per epoch, overhead_share of them overhead scans
-  gpu_augment()     batched on the GPU: rotation / flips / shift for overhead scans (same transform on
-                    the depth map), flip + mild zoom for side frames, mild colour jitter
+  MixtureSampler    a fixed number of samples per epoch from each pool (overhead scans, side frames,
+                    Flavoria plates), every image of a pool equally likely
+  gpu_augment()     batched on the GPU: rotation / flips / shift for overhead scans and Flavoria plates (same
+                    transform on the depth map), flip (+ optional zoom) for side frames, mild colour jitter
 """
 from __future__ import annotations
 
@@ -31,8 +33,10 @@ import model as M
 from . import utils
 
 SPLITS = {"train": "train", "val": "validation", "test": "test"}
+TABLES = ("overhead", "side", "flavoria")     # flavoria (src/flavoria.py): train and test only
 DEPTH_SCALE = 1e-4                  # depth_raw.png units -> metres
 DEPTH_VALID = (1, 6000)             # raw readings outside (0, 0.6 m] are no-reading / background
+FLAVORIA_PRESENT_G = 10.0           # a mapped Flavoria ingredient is supervised from here (src/flavoria.PRESENT_G)
 
 
 def download(cfg) -> Path:
@@ -61,7 +65,7 @@ def published(dataset_id: str) -> bool:
 def to_arrow(data_dir: Path) -> dict[tuple[str, str], Path]:
     """(table, split) -> Arrow IPC file with dish_id + raw image bytes (+ depth bytes). Built once."""
     out = {}
-    for table in ("overhead", "side"):
+    for table in TABLES:
         for split, fname in SPLITS.items():
             shards = sorted((data_dir / table).glob(f"{fname}-*.parquet"))
             dst = data_dir / "arrow" / f"{table}_{split}.arrow"
@@ -76,7 +80,7 @@ def to_arrow(data_dir: Path) -> dict[tuple[str, str], Path]:
                     cols = {"dish_id": t["dish_id"], "image": pc.struct_field(t["image"], "bytes")}
                     if table == "overhead":
                         cols["depth"] = pc.struct_field(t["depth"], "bytes")
-                    else:
+                    elif table == "side":
                         cols["camera"], cols["frame"] = t["camera"], t["frame"]
                     batch = pa.table(cols)
                     writer = writer or pa.ipc.new_file(sink, batch.schema)
@@ -113,16 +117,19 @@ class FrameStore:
 
 @dataclass
 class Labels:
-    """Per-dish targets, indexed by dish row (dish_ids[i])."""
+    """Per-dish targets, indexed by dish row (dish_ids[i]). Nutrition5k dishes first, then Flavoria plates
+    (split "flavoria_train" / "flavoria_test", so every Nutrition5k split and statistic leaves them out)."""
     dish_ids: list
     index: dict             # dish_id -> row
     grams: np.ndarray       # (D, K) float32, grams of each ingredient
-    totals: np.ndarray      # (D, 5) float32: kcal, mass, fat, carb, protein (corrected)
+    totals: np.ndarray      # (D, 5) float32: kcal, mass, fat, carb, protein (corrected; 0 where unknown)
     orig_totals: np.ndarray # (D, 5) as logged by Nutrition5k
-    split: np.ndarray       # (D,) train | val | test
+    split: np.ndarray       # (D,) train | val | test | flavoria_train | flavoria_test
     test_clean: np.ndarray  # (D,) bool
     group: np.ndarray       # (D,) plate group
     ingredients: pd.DataFrame
+    known_grams: np.ndarray   # (D, K) bool: grams[d, k] is a label (Nutrition5k: every k, absent = 0 g)
+    known_totals: np.ndarray  # (D, 5) bool: totals[d, t] is a label (Flavoria: the mass only)
 
     @property
     def densities(self) -> np.ndarray:
@@ -138,8 +145,40 @@ def load_labels(data_dir: Path) -> Labels:
     np.add.at(grams, (items["dish_id"].map(index).to_numpy(), items["k"].to_numpy()), items["grams"].to_numpy())
     cols = list(M.TOTALS)
     arr = lambda c, dtype=None: np.array(dishes[c].to_numpy(dtype), copy=True)    # writable (pandas CoW views are not)
-    return Labels(list(dishes["dish_id"]), index, grams, arr(cols, np.float32),
-                  arr([f"orig_{c}" for c in cols], np.float32), arr("split"), arr("test_clean", bool), arr("group"), ing)
+    labels = Labels(list(dishes["dish_id"]), index, grams, arr(cols, np.float32), arr([f"orig_{c}" for c in cols], np.float32),
+                    arr("split"), arr("test_clean", bool), arr("group"), ing, np.ones_like(grams, bool),
+                    np.ones((len(dishes), len(cols)), bool))
+    if (data_dir / "flavoria_sessions.parquet").exists():
+        add_flavoria(labels, pd.read_parquet(data_dir / "flavoria_sessions.parquet"),
+                     pd.read_parquet(data_dir / "flavoria_items.parquet"))
+    return labels
+
+
+def add_flavoria(labels: Labels, plates: pd.DataFrame, items: pd.DataFrame) -> None:
+    """Append the Flavoria plates: the weighed plate mass, and the grams of the ingredients that map to one plain
+    Nutrition5k food (from FLAVORIA_PRESENT_G). Every other target of a plate is unknown, not zero."""
+    n, k = len(plates), labels.grams.shape[1]
+    base = len(labels.dish_ids)
+    row = {d: base + i for i, d in enumerate(plates["dish_id"])}
+    grams = np.zeros((n, k), np.float32)
+    mapped = items[items["k"] >= 0]
+    np.add.at(grams, (mapped["dish_id"].map(row).to_numpy() - base, mapped["k"].to_numpy()), mapped["grams"].to_numpy())
+    known = grams >= FLAVORIA_PRESENT_G
+    grams[~known] = 0.0
+    totals = np.zeros((n, len(M.TOTALS)), np.float32)
+    totals[:, M.TOTALS.index("mass")] = plates["mass"].to_numpy(np.float32)
+    known_totals = np.zeros_like(totals, bool)
+    known_totals[:, M.TOTALS.index("mass")] = True
+    labels.dish_ids += list(plates["dish_id"])
+    labels.index.update(row)
+    labels.grams = np.concatenate([labels.grams, grams])
+    labels.totals = np.concatenate([labels.totals, totals])
+    labels.orig_totals = np.concatenate([labels.orig_totals, totals])
+    labels.split = np.concatenate([labels.split, ("flavoria_" + plates["split"]).to_numpy()])
+    labels.test_clean = np.concatenate([labels.test_clean, np.zeros(n, bool)])
+    labels.group = np.concatenate([labels.group, labels.group.max() + 1 + np.arange(n)])
+    labels.known_grams = np.concatenate([labels.known_grams, known])
+    labels.known_totals = np.concatenate([labels.known_totals, known_totals])
 
 
 def fit_canvas(img: torch.Tensor, size, fill, mode: str = "bilinear") -> torch.Tensor:
@@ -160,7 +199,8 @@ _FILL = tuple(round(255 * m) for m in M.MEAN)
 
 
 class N5kImages(Dataset):
-    """Samples = (table, row) pairs of one split; returns uint8 canvas + targets (+ metric depth)."""
+    """Samples = (table, row) pairs of one split; returns uint8 canvas + targets and which targets are known
+    (+ metric depth). Flavoria plates are photographed from above: they augment like overhead scans."""
 
     def __init__(self, stores: dict, rows: list[tuple[str, int, int]], labels: Labels, size, depth: bool):
         self.stores, self.rows, self.labels, self.size, self.depth = stores, rows, labels, tuple(size), depth
@@ -176,11 +216,12 @@ class N5kImages(Dataset):
         raw = torch.frombuffer(bytearray(store.get("image", row)), dtype=torch.uint8)
         img = decode_jpeg(raw)
         canvas = fit_canvas(img, self.size, _FILL)
-        overhead = table == "overhead"
-        item = {"image": canvas, "overhead": overhead, "dish": dish,
-                "grams": torch.from_numpy(self.labels.grams[dish]), "totals": torch.from_numpy(self.labels.totals[dish])}
+        lab = self.labels
+        item = {"image": canvas, "overhead": table != "side", "dish": dish,
+                "grams": torch.from_numpy(lab.grams[dish]), "totals": torch.from_numpy(lab.totals[dish]),
+                "known_grams": torch.from_numpy(lab.known_grams[dish]), "known_totals": torch.from_numpy(lab.known_totals[dish])}
         if self.depth:
-            if overhead:
+            if table == "overhead":
                 from PIL import Image
 
                 png = store.get("depth", row)          # empty for dish_1564159636: a 0-byte file in the bucket
@@ -193,11 +234,15 @@ class N5kImages(Dataset):
 
 
 class MixtureSampler(Sampler):
-    """samples_per_epoch indices per epoch, overhead_share from the overhead pool (with replacement:
-    every overhead scan repeats under fresh rotations), the rest from the side-frame pool."""
+    """samples_per_epoch indices per epoch: each pool (overhead scans, side frames, Flavoria plates) gives its
+    share, every image of the pool equally likely, with replacement (a scan repeats under fresh rotations).
+    Empty pools drop out and the others share their part."""
 
-    def __init__(self, overhead: list[int], side: list[int], n: int, overhead_share: float, seed: int):
-        self.overhead, self.side, self.n, self.share, self.seed, self.epoch = overhead, side, n, overhead_share, seed, 0
+    def __init__(self, pools: dict[str, list[int]], shares: dict[str, float], n: int, seed: int):
+        live = [k for k in pools if pools[k] and shares.get(k, 0) > 0]
+        total = sum(shares[k] for k in live)
+        self.pools, self.shares = {k: pools[k] for k in live}, {k: shares[k] / total for k in live}
+        self.n, self.seed, self.epoch = n, seed, 0
 
     def set_epoch(self, epoch: int) -> None:
         self.epoch = epoch
@@ -205,12 +250,17 @@ class MixtureSampler(Sampler):
     def __len__(self) -> int:
         return self.n
 
+    def counts(self) -> dict[str, int]:
+        names = list(self.pools)
+        out = {k: int(round(self.n * self.shares[k])) for k in names[:-1]}
+        if names:
+            out[names[-1]] = self.n - sum(out.values())
+        return out
+
     def __iter__(self):
         g = np.random.default_rng((self.seed, self.epoch))
-        share = self.share if self.side and self.overhead else float(bool(self.overhead))
-        n_over = int(round(self.n * share))
-        idx = np.concatenate([g.choice(self.overhead, n_over) if n_over else np.zeros(0, int),
-                              g.choice(self.side, self.n - n_over) if self.n - n_over else np.zeros(0, int)])
+        idx = np.concatenate([g.choice(self.pools[k], c) if c else np.zeros(0, int) for k, c in self.counts().items()]
+                             or [np.zeros(0, int)])
         g.shuffle(idx)
         return iter(idx.tolist())
 
@@ -222,49 +272,60 @@ class Loaders:
     test: DataLoader
     labels: Labels
     sampler: MixtureSampler
+    flavoria_test: DataLoader | None = None
 
 
 def build_loaders(cfg, device, micro_batch: int) -> Loaders:
-    """Train (mixture sampler, uint8 canvases, augmentation later on the GPU), val and test (every image)."""
+    """Train (mixture sampler, uint8 canvases, augmentation later on the GPU), val and test (every image; Nutrition5k
+    only, so validation scores stay comparable), and the Flavoria test plates."""
     data_dir = download(cfg)
     files = to_arrow(data_dir)
     labels = load_labels(data_dir)
     stores = {k: FrameStore(p) for k, p in files.items() if p.exists()}
 
-    def rows(split: str) -> tuple[list, list[int], list[int]]:
-        out, over, side = [], [], []
-        for table in ("overhead", "side"):
+    def rows(split: str, tables) -> tuple[list, dict[str, list[int]]]:
+        out, pools = [], {t: [] for t in tables}
+        for table in tables:
             store = stores.get((table, split))
             if store is None:
                 continue
             for r, d in enumerate(store.column("dish_id")):
-                (over if table == "overhead" else side).append(len(out))
+                pools[table].append(len(out))
                 out.append((table, r, labels.index[d]))
-        return out, over, side
+        return out, pools
 
     pin = device.type == "cuda"
     kw = dict(num_workers=cfg.workers, pin_memory=pin, persistent_workers=cfg.workers > 0,
               prefetch_factor=4 if cfg.workers > 0 else None)
     made = {}
     for split in SPLITS:
-        r, over, side = rows(split)
-        split_stores = {t: stores[(t, split)] for t in ("overhead", "side") if (t, split) in stores}
-        made[split] = (N5kImages(split_stores, r, labels, cfg.image_size, cfg.depth_aux and split != "test"), over, side)
-    ds, over, side = made["train"]
-    sampler = MixtureSampler(over, side, cfg.samples_per_epoch, cfg.overhead_share, cfg.seed)
+        tables = ("overhead", "side") + (("flavoria",) if split == "train" and cfg.flavoria_share > 0 else ())
+        r, pools = rows(split, tables)
+        split_stores = {t: stores[(t, split)] for t in tables if (t, split) in stores}
+        made[split] = (N5kImages(split_stores, r, labels, cfg.image_size, cfg.depth_aux and split != "test"), pools)
+    ds, pools = made["train"]
+    f = cfg.flavoria_share
+    shares = {"overhead": cfg.overhead_share * (1 - f), "side": (1 - cfg.overhead_share) * (1 - f), "flavoria": f}
+    sampler = MixtureSampler(pools, shares, cfg.samples_per_epoch, cfg.seed)
     train = DataLoader(ds, batch_size=micro_batch, sampler=sampler, drop_last=True, **kw)
     val = DataLoader(made["val"][0], batch_size=2 * micro_batch, shuffle=False, **kw)
     test = DataLoader(made["test"][0], batch_size=2 * micro_batch, shuffle=False, **kw)
-    return Loaders(train, val, test, labels, sampler)
+    flavoria_test = None
+    if ("flavoria", "test") in stores:
+        r, _ = rows("test", ("flavoria",))
+        flavoria_test = DataLoader(N5kImages({"flavoria": stores[("flavoria", "test")]}, r, labels, cfg.image_size, False),
+                                   batch_size=2 * micro_batch, shuffle=False, **kw)
+    return Loaders(train, val, test, labels, sampler, flavoria_test)
 
 
 # --------------------------------------------------------------------------- GPU augmentation
-def _affine(n: int, overhead: torch.Tensor, gen: torch.Generator, device, aspect: float) -> torch.Tensor:
+def _affine(n: int, overhead: torch.Tensor, gen: torch.Generator, device, aspect: float,
+            side_zoom: float = 1.0) -> torch.Tensor:
     """(N, 2, 3) affine_grid matrices. Overhead: any rotation, flips, +-4 % shift, no zoom (the fixed
-    camera height makes apparent size a mass cue). Side: horizontal flip, zoom-in up to 1/0.85."""
+    camera height makes apparent size a mass cue). Side: horizontal flip, zoom-in up to 1/side_zoom."""
     u = torch.rand(n, 6, generator=gen, device=device)
     theta = torch.where(overhead, u[:, 0] * 2 * math.pi, torch.zeros_like(u[:, 0]))
-    zoom = torch.where(overhead, torch.ones_like(u[:, 1]), 0.85 + 0.15 * u[:, 1])
+    zoom = torch.where(overhead, torch.ones_like(u[:, 1]), side_zoom + (1.0 - side_zoom) * u[:, 1])
     fx = torch.where(u[:, 2] < 0.5, -1.0, 1.0)
     fy = torch.where(overhead & (u[:, 3] < 0.5), -1.0, 1.0)
     shift = torch.where(overhead, 0.04, 1.0 - zoom)[:, None] * (2 * u[:, 4:6] - 1)
@@ -275,7 +336,8 @@ def _affine(n: int, overhead: torch.Tensor, gen: torch.Generator, device, aspect
     return mat
 
 
-def gpu_augment(batch: dict, train: bool, gen: torch.Generator | None = None) -> tuple[torch.Tensor, torch.Tensor | None]:
+def gpu_augment(batch: dict, train: bool, gen: torch.Generator | None = None,
+                side_zoom: float = 1.0) -> tuple[torch.Tensor, torch.Tensor | None]:
     """uint8 canvases (already on the GPU) -> float images in [0, 1] (+ depth in metres, 0 = invalid)."""
     x = batch["image"].float() / 255.0
     depth = batch.get("depth")
@@ -284,7 +346,7 @@ def gpu_augment(batch: dict, train: bool, gen: torch.Generator | None = None) ->
         return x, depth
     n, device = x.shape[0], x.device
     overhead = batch["overhead"].to(device).bool()
-    mat = _affine(n, overhead, gen, device, x.shape[-1] / x.shape[-2])
+    mat = _affine(n, overhead, gen, device, x.shape[-1] / x.shape[-2], side_zoom)
     grid = F.affine_grid(mat, list(x.shape), align_corners=False)
     fill = torch.tensor(M.MEAN, device=device).view(1, 3, 1, 1)
     x = F.grid_sample(x - fill, grid, mode="bilinear", padding_mode="zeros", align_corners=False) + fill
@@ -302,11 +364,16 @@ def gpu_augment(batch: dict, train: bool, gen: torch.Generator | None = None) ->
 def summary(loaders: Loaders) -> dict:
     """Images and dishes per split (what the run actually trains / validates / tests on)."""
     out = {}
-    for split, loader in (("train", loaders.train), ("val", loaders.val), ("test", loaders.test)):
+    parts = [("train", loaders.train), ("val", loaders.val), ("test", loaders.test)]
+    if loaders.flavoria_test is not None:
+        parts.append(("flavoria_test", loaders.flavoria_test))
+    for split, loader in parts:
         rows = loader.dataset.rows
-        over = sum(1 for t, _, _ in rows if t == "overhead")
-        out[split] = {"dishes": len({d for _, _, d in rows}), "overhead_scans": over, "side_frames": len(rows) - over}
+        count = lambda table: sum(1 for t, _, _ in rows if t == table)
+        out[split] = {"dishes": len({d for _, _, d in rows}), "overhead_scans": count("overhead"),
+                      "side_frames": count("side"), "flavoria_plates": count("flavoria")}
     out["ingredients"] = int(loaders.labels.grams.shape[1])
+    out["samples_per_epoch"] = loaders.sampler.counts()
     return out
 
 

@@ -36,13 +36,13 @@ def build_model(cfg, labels, pretrained: bool | None = None, nutritext: dict | N
     if cfg.backbone == "dinov2":
         from transformers import AutoConfig
 
-        backbone_config = AutoConfig.from_pretrained(M.DINO_BASE, drop_path_rate=cfg.drop_path).to_dict()
+        backbone_config = AutoConfig.from_pretrained(cfg.backbone_weights or M.DINO_BASE, drop_path_rate=cfg.drop_path).to_dict()
     net = M.CalorieLens(
         ingredients=list(ing["name"]), ingredient_ids=[int(i) for i in ing["ingr_id"]], densities=dens.tolist(),
         density_sources=list(ing["source"]), mean_density=[float(v) for v in mean_density],
         backbone=cfg.backbone, backbone_config=backbone_config, image_size=list(cfg.image_size),
         d_model=cfg.d_model, decoder_layers=cfg.decoder_layers, heads=cfg.heads, drop_path=cfg.drop_path,
-        nutritext=nutritext, pretrained=pretrained)
+        backbone_weights=cfg.backbone_weights, multi_pool=cfg.multi_pool, nutritext=nutritext, pretrained=pretrained)
     init_output_biases(net, labels)
     return net
 

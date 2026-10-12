@@ -1,8 +1,9 @@
 """Assemble the deployed model, write it with metrics + graphs into model/, refresh the model card.
 
   assemble()   the winning stage-1 network + NutriText -> one CalorieLens whose config carries the
-               fitted mass blend and display threshold (built from the winner's own saved config, so
-               nothing is downloaded and the DINOv2 / ConvNeXt shape is exact)
+               readout fitted on validation (mass blend, kcal blend, kcal scale), the test-time views and the
+               display threshold (built from the winner's own saved config, so nothing is downloaded and the
+               DINOv2 / ConvNeXt shape is exact)
   export()     model.safetensors + config.json + nutritext_tokenizer.json, metrics.json, assets/*.png,
                NOTICE (+ the Apache-2.0 text) when the shipped backbone is DINOv2, then the model card's
                YAML, metrics table and Experiments table. Exporting anywhere but model/ (smoke runs)
@@ -24,7 +25,8 @@ import model as M
 from . import utils
 
 TASK = "image -> ingredient grams -> nutrition (multi-label + regression)"
-DATASET = "Nutrition5k (CC BY 4.0) cleaned + USDA FoodData Central (CC0): shalev396/calorie-lens-data"
+DATASET = ("Nutrition5k (CC BY 4.0) cleaned + FlavoriaFoodWeight1700 (CC BY 4.0) + USDA FoodData Central (CC0): "
+           "shalev396/calorie-lens-data")
 COPIED_FROM_MODEL_DIR = ("README.md", "model.py", "handler.py", "requirements.txt")
 WEIGHT_FILES = (M.WEIGHTS_FILE, "config.json", M.TOKENIZER_FILE)
 NOTICE_FILES = ("NOTICE", "LICENSE-APACHE-2.0.txt")
@@ -39,13 +41,21 @@ BEST, OTHER = "#2a78d6", "#b9b8b3"
 
 
 # --------------------------------------------------------------------------- model files
-def assemble(stage1: M.CalorieLens, nutritext: dict | None, mass_blend: float, presence_threshold: float) -> M.CalorieLens:
-    """One deployable CalorieLens: stage-1 weights + NutriText ({"net", "kwargs"}) + fitted settings."""
+STAGE1_PARTS = ("backbone.", "decoder.", "totals_head.")
+READOUT_DEFAULTS = {"mass_blend": 1.0, "kcal_blend": 0.0, "kcal_scale": 0.0}
+
+
+def assemble(stage1: M.CalorieLens, nutritext: dict | None, readout: dict, presence_threshold: float,
+             tta_views: int = 1) -> M.CalorieLens:
+    """One deployable CalorieLens: the stage-1 weights + NutriText ({"net", "kwargs"}) + the readout fitted on
+    validation ({"mass_blend", "kcal_blend", "kcal_scale"}), test-time views and display threshold."""
     config = dict(stage1._hub_mixin_config)
-    config.update(mass_blend=float(mass_blend), presence_threshold=float(presence_threshold), pretrained=False,
+    config.update({k: float(readout.get(k, d)) for k, d in READOUT_DEFAULTS.items()})
+    config.update(tta_views=int(tta_views), presence_threshold=float(presence_threshold), pretrained=False,
                   nutritext=nutritext["kwargs"] if nutritext else None)
     final = M.CalorieLens(**config)
-    missing, unexpected = final.load_state_dict(stage1.state_dict(), strict=False)
+    state = {k: v for k, v in stage1.state_dict().items() if k.startswith(STAGE1_PARTS)}
+    missing, unexpected = final.load_state_dict(state, strict=False)
     if unexpected or any(not k.startswith("nutritext.") for k in missing):
         raise RuntimeError(f"stage-1 weights do not fit: missing {missing[:5]}, unexpected {unexpected[:5]}")
     if nutritext:
@@ -62,18 +72,29 @@ def save_model(net: M.CalorieLens, tokenizer, target: str | Path) -> Path:
     return target
 
 
-def write_notice(model_dir: Path, dinov2: bool) -> None:
-    """DINOv2 weights are Apache-2.0: ship NOTICE + the licence text with the fine-tuned weights."""
-    if not dinov2:
+def apache_sources(net: M.CalorieLens) -> list[str]:
+    """The model's pretrained weights if they are distributed under Apache-2.0: DINOv2 (any size) or a timm
+    ConvNeXt checkpoint (Hub cards: apache-2.0). torchvision's ImageNet-1k ConvNeXt is BSD: nothing to add."""
+    src = (net.backbone_weights or M.DINO_BASE) if net.backbone_name == "dinov2" else net.backbone_weights
+    return [src] if src and (net.backbone_name == "dinov2" or src.startswith("timm/")) else []
+
+
+def write_notice(model_dir: Path, sources: list[str]) -> None:
+    """Apache-2.0 pretrained weights (`sources`): ship NOTICE + the licence text with the fine-tuned weights."""
+    if not sources:
         for name in NOTICE_FILES:
             (model_dir / name).unlink(missing_ok=True)
         return
+    origin = {True: ("DINOv2 (https://github.com/facebookresearch/dinov2), Copyright (c) Meta Platforms, Inc. "
+                     "and affiliates"),
+              False: ("ConvNeXt (https://github.com/facebookresearch/ConvNeXt, Copyright (c) Meta Platforms, Inc. "
+                      "and affiliates), as published by timm (https://github.com/huggingface/pytorch-image-models)")}
+    lines = [f"- {s}: {origin['dino' in s.lower()]}" for s in sources]
     (model_dir / "NOTICE").write_text(
         "Calorie Lens\nCopyright (c) 2026 Shalev Ben Moshe (MIT, see LICENSE)\n\n"
-        "The image backbone in model.safetensors was fine-tuned from DINOv2 with registers\n"
-        f"({M.DINO_BASE}, https://github.com/facebookresearch/dinov2),\n"
-        "Copyright (c) Meta Platforms, Inc. and affiliates, licensed under the Apache License 2.0\n"
-        "(LICENSE-APACHE-2.0.txt). The fine-tuned weights were modified by training on Nutrition5k.\n", encoding="utf-8")
+        "The image backbone in model.safetensors was fine-tuned from these pretrained weights, licensed under the\n"
+        "Apache License 2.0 (LICENSE-APACHE-2.0.txt):\n" + "\n".join(lines) + "\n"
+        "The fine-tuned weights were modified by training on Nutrition5k.\n", encoding="utf-8")
     with urllib.request.urlopen(APACHE_URL, timeout=60) as r:
         (model_dir / "LICENSE-APACHE-2.0.txt").write_bytes(r.read())
 
@@ -87,6 +108,7 @@ def build_metrics(*, headline: dict, test: dict, test_clean: dict, test_original
             "fat_pmae": o.get("fat_pmae"), "carb_pmae": o.get("carb_pmae"), "protein_pmae": o.get("protein_pmae"),
             "side_dish_kcal_pmae": sd.get("kcal_pmae"), "test_clean_kcal_pmae": test_clean.get("overhead", {}).get("kcal_pmae"),
             "presence_map": o.get("presence_map"), "ingredient_grams_mae": o.get("ingredient_grams_mae"),
+            "flavoria_mass_pmae": test.get("flavoria", {}).get("mass_pmae"),
             "nutritext_kcal_mae_per_100g": nutritext.get("test", {}).get("generic", {}).get("nutritext", {}).get("kcal_mae")}
     return {
         "model": f"Calorie Lens ({winner})", "variant": winner, "task": TASK, "dataset": DATASET, "split": "test",
@@ -103,15 +125,16 @@ def build_metrics(*, headline: dict, test: dict, test_clean: dict, test_original
 
 
 def experiments_markdown(metrics: dict) -> str:
-    """Every experiment: validation score (picks the winner) and test calorie / mass errors."""
+    """Every candidate: validation score (picks the winner) and test calorie / mass errors."""
     rows = metrics.get("experiments", {})
-    head = ("| experiment | val score | test kcal PMAE (overhead) | test mass PMAE | side-dish kcal PMAE | best epoch | params |\n"
-            "|---|---|---|---|---|---|---|")
+    head = ("| candidate | val score | test kcal PMAE (overhead) | test mass PMAE | side-dish kcal PMAE | Flavoria weight PMAE "
+            "| views | params |\n|---|---|---|---|---|---|---|---|")
     lines = []
     for name, r in rows.items():
         cells = [f"{r.get('val_score', float('nan')):.2f}", f"{r.get('test_kcal_pmae', float('nan')):.2f}%",
                  f"{r.get('test_mass_pmae', float('nan')):.2f}%", f"{r.get('test_side_dish_kcal_pmae', float('nan')):.2f}%",
-                 str(r.get("best_epoch", "")), utils.human_params(int(r.get("params", 0)))]
+                 f"{r['flavoria_mass_pmae']:.2f}%" if r.get("flavoria_mass_pmae") is not None else "-",
+                 str(r.get("views", 1)), utils.human_params(int(r.get("params", 0)))]
         if name == metrics.get("variant"):
             lines.append(f"| **{name} (deployed)** | " + " | ".join(f"**{c}**" for c in cells) + " |")
         else:
@@ -136,7 +159,7 @@ def export(net: M.CalorieLens, tokenizer, metrics: dict, model_dir: str | Path, 
         for name in COPIED_FROM_MODEL_DIR:
             shutil.copy2(utils.MODEL_DIR / name, model_dir / name)
     save_model(net, tokenizer, model_dir)
-    write_notice(model_dir, net.backbone_name == "dinov2")
+    write_notice(model_dir, apache_sources(net))
     (model_dir / "assets").mkdir(exist_ok=True)
     for old in (model_dir / "assets").glob("*.png"):
         old.unlink()                                   # a graph this run did not make would be stale
