@@ -72,7 +72,7 @@ auxiliary depth head, and the result is exported as a Hugging Face model folder,
 |---|---|---|
 | smoke notebook (6 dishes, 2 epochs, NutriText 1 epoch) | ~65 s end to end (measured) | seconds |
 | dataset build (25,466 files, ~195 GB streamed) | ~1.5 h on a 20-thread desktop at ~1 Gbit/s (measured on the first 400 dishes) | runs on the GPU runtime's CPUs in the first session, ~1-2 h (section 3a's probe projects it) |
-| full notebook (NutriText + E1 + E2 + E3) | not practical | ~2.7 h on an A100, ~1.6 h on an H100 (estimate from FLOPs; section 4 measures it) |
+| full notebook (NutriText + E1 + E2 + E3) | not practical | 3.1 h measured on a 40 GB+ Colab GPU (micro-batch 32; per epoch: ConvNeXt 90 s, DINOv2 146 s, ConvNeXt + depth 92 s; peak 30 GB). A 22 GB L4 runs out of memory in DINOv2's throughput probe |
 
 ## Data
 - **[Nutrition5k](https://github.com/google-research-datasets/Nutrition5k)** (Thames et al., CVPR 2021, CC BY 4.0),

@@ -15,9 +15,9 @@
 | **Framework** | PyTorch |
 | **Architecture** | Two models fused: an image backbone (ConvNeXt-B vs DINOv2-B, benchmarked) with 253 ingredient queries whose last layer is 253 gram neurons, feeding a frozen per-gram nutrition layer; plus NutriText, a food-name transformer trained from scratch |
 | **Dataset** | [Nutrition5k](https://github.com/google-research-datasets/Nutrition5k) (CC BY 4.0, cleaned: 5,005 dishes, 253 ingredients, overhead scans + side-angle frames) and [USDA FoodData Central](https://fdc.nal.usda.gov/) (public domain, ~470k food names), published as [shalev396/calorie-lens-data](https://huggingface.co/datasets/shalev396/calorie-lens-data) |
-| **Result** | Pending the first full training run (Colab GPU); the target is a calorie percent error below 18 % on the official overhead test split (paper's RGB baseline 26.1 %, best published RGB-only 14.1 %) |
-| **License** | MIT, Copyright (c) 2026 Shalev Ben Moshe; if the DINOv2 backbone wins, its fine-tuned weights also carry Apache-2.0 (NOTICE in the model repo) |
-| **Runs on** | Space: ZeroGPU with a CPU fallback · Training: Colab A100 / H100 / G4 (~1.6-2.7 h, plus ~1-2 h to build the dataset in the first run) |
+| **Result** | **18.35 % calorie error** (46.9 kcal) on the official overhead test split, 95 % CI 16.3-20.2 % (the paper's RGB model: 26.1 %, its RGB-D model: 18.8 %, best published RGB-only: 14.1 %); plate mass 14.3 % |
+| **License** | MIT, Copyright (c) 2026 Shalev Ben Moshe (the shipped backbone is ConvNeXt-B, so no Apache-2.0 notice is needed) |
+| **Runs on** | Space: ZeroGPU (~0.8 s per photo) with a CPU fallback · Training: 3.1 h on a Colab GPU with 40 GB+ of memory (a 22 GB L4 runs out of memory on DINOv2), plus ~1-2 h to build the dataset in the first run |
 
 ## The problem
 Counting calories from a photo has two hard parts: **what** is on the plate, and **how much** of it. The
@@ -100,9 +100,40 @@ a ConvNeXt within the CI wins the tie), the mass blend and the display threshold
 once, at the end. Details: [training/README.md](training/README.md).
 
 ## Results
-Pending the first full training run. The notebook reports MAE and percent MAE for kcal, mass, fat, carbs and
-protein on the official overhead test split (corrected and original labels), side views, `test_clean`, a
-bootstrap CI, every experiment and the ablation.
+Official overhead test split (507 scans), percent MAE = MAE / mean of the truth:
+
+| | kcal | mass | fat | carbs | protein |
+|---|---|---|---|---|---|
+| percent error | **18.35 %** | 14.29 % | 24.26 % | 22.37 % | 27.89 % |
+| absolute error | 46.9 kcal | 28.4 g | 3.1 g | 4.5 g | 4.8 g |
+
+- **Against published results:** the Nutrition5k paper's RGB model gets 26.1 % and its RGB-D model 18.8 %;
+  the best published RGB-only result is 14.1 %. The original labels give the same 18.35 % on these scans
+  (the label fixes barely touch these scans), so the comparison is direct.
+- **Other views:** 17.3 % when all side-angle frames of a dish are averaged, 18.4 % on `test_clean` (plates
+  never seen in training).
+- **Experiments:** validation picked ConvNeXt-B (score 17.22 vs DINOv2-B 17.92). On test, DINOv2-B came out
+  lower (17.53 % vs 18.35 %), but test makes no choices. The depth head (E3) did not help (val 17.36, test 19.02 %).
+
+![Training loss and validation score of every experiment](model/assets/training_curves.png)
+
+![Predicted vs true kcal on the overhead test scans](model/assets/kcal_scatter.png)
+
+- **By plate size:** 11 kcal error under 100 kcal; plates over 600 kcal (38 dishes) are underestimated by
+  167 kcal on average, as the model pulls toward a typical plate.
+- **Ablation:** the totals head alone scores 16.4 %, the itemised gram neurons 18.4 %, the plain sum of the
+  soft grams 23.6 %. The ingredient list costs about 2 points of calorie accuracy, buys an answer whose rows
+  add up to the totals, and the totals head's own estimate is returned alongside it (`direct_estimate`).
+- **Ingredients:** presence mAP 0.65, F1 0.73; 11.2 g error per present ingredient.
+- **NutriText** on 633 unseen USDA foods: kcal R² 0.89 vs 0.78 for TF-IDF nearest neighbours (31.7 vs
+  47.4 kcal per 100 g), better on all eight nutrients; zero-shot on the 253 Nutrition5k names, 56 vs 87 kcal
+  per 100 g.
+
+![Calorie error of each way to read the model](model/assets/ablation.png)
+
+![Where each ingredient's query looked](model/assets/heatmaps.png)
+
+![NutriText vs a TF-IDF nearest-neighbour lookup](model/assets/nutritext.png)
 
 ## Deployment
 - **Model repo**: https://huggingface.co/shalev396/calorie-lens (weights, `model.py`, `handler.py`)
@@ -131,6 +162,8 @@ calorie-lens/
   setup and 253 ingredients. On home photos the grams are less reliable unless the food's weight is entered.
 - Oil, butter, dressings and sauces are largely invisible; the model can only infer them from appearance.
 - Only kcal, fat, carbs and protein are Nutrition5k's own values; fiber, sugars, saturated fat and sodium come
-  from the matched USDA food. NutriText estimates for unfamiliar names are approximate.
+  from the matched USDA food. NutriText estimates for unfamiliar names are approximate, and some are off
+  (it gives grilled salmon 7.7 g of carbs per 100 g).
+- Plates over ~600 kcal are underestimated.
 - Corrected-label results are not directly comparable with published numbers; both are reported.
 - Not a medical device: for a rough idea, not for dietary decisions.
