@@ -288,7 +288,7 @@ photographs each tray from above and weighs every serving it takes. Built by
 - Cleaning, of {stats.get('sessions', 0)} sessions:
 {dropped}
   then {stats.get('identification_photos', 0)} identification photos matched to {stats.get('matched_plates', 0)} kept plates (tray RFID +
-  time to the second). Sauces from the self-service station and bread are not weighed: weights are slight lower bounds.
+  time to the second). Sauces from the self-service station and bread are not weighed: weights are slightly low.
 
 {CITATION}
 {_CARD_END}"""

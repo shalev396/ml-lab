@@ -42,7 +42,7 @@ Its own face detector finds and aligns the face, two embedders trained here turn
 Upload a clothing photo and get the most similar products from an 8,000-item catalog. It uses MobileNetV2 embeddings and nearest-neighbour search.
 
 ### 🥗 [Calorie Lens](calorie-lens/)
-`95.6M params` · `PyTorch` · `Nutrition5k + USDA` · **18.35% calorie error (paper's RGB baseline: 26.1%)**
+`94.6M params` · `PyTorch` · `Nutrition5k + Flavoria + USDA` · **16.01% calorie error (paper's RGB baseline: 26.1%)**
 Photograph a meal and get every ingredient, its grams, and the calories and macros of each. An image model's 253 gram neurons feed a frozen nutrition table; a food-name transformer trained from scratch covers everything else.
 
 ## 📝 Language

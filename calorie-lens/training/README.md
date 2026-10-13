@@ -79,7 +79,7 @@ is scored on validation, and the winner is exported as a Hugging Face model fold
 | smoke notebook (6 dishes, 2 epochs, NutriText 1 epoch) | ~65 s end to end (measured) | seconds |
 | dataset build (25,466 files, ~195 GB streamed) | ~1.5 h on a 20-thread desktop at ~1 Gbit/s (measured on the first 400 dishes) | runs on the GPU runtime's CPUs in the first session, ~1-2 h (section 3a's probe projects it) |
 | Flavoria build (3,345 trays, 2.6 GB download) | the download only (~120 KB/s per stream from Zenodo here; 16 streams) | ~10-30 min on Colab, depending on Zenodo |
-| full notebook (NutriText + E1 + E2 + candidates) | not practical | ~3 h estimated on a 40 GB+ Colab GPU: 40 epochs at the v1 per-epoch times (ConvNeXt 90 s, DINOv2 146 s, micro-batch 32, peak 30 GB) + ~15 min of 4-view evaluation. v1 (30 epochs + a depth run) took 3.1 h. A 22 GB L4 runs out of memory in DINOv2's throughput probe |
+| full notebook (NutriText + E1 + E2 + candidates) | not practical | 2.9 h measured on a 40 GB+ Colab GPU (2026-10-13): ConvNeXt-B 88 s per epoch (64 min), DINOv2-B 145 s (101 min), micro-batch 32, peak 30 GB; the rest is NutriText and 4-view evaluation. A 22 GB L4 runs out of memory in DINOv2's throughput probe |
 
 ## Data
 - **[Nutrition5k](https://github.com/google-research-datasets/Nutrition5k)** (Thames et al., CVPR 2021, CC BY 4.0),

@@ -94,7 +94,7 @@ def write_notice(model_dir: Path, sources: list[str]) -> None:
         "Calorie Lens\nCopyright (c) 2026 Shalev Ben Moshe (MIT, see LICENSE)\n\n"
         "The image backbone in model.safetensors was fine-tuned from these pretrained weights, licensed under the\n"
         "Apache License 2.0 (LICENSE-APACHE-2.0.txt):\n" + "\n".join(lines) + "\n"
-        "The fine-tuned weights were modified by training on Nutrition5k.\n", encoding="utf-8")
+        "The fine-tuned weights were modified by training on Nutrition5k and FlavoriaFoodWeight1700.\n", encoding="utf-8")
     with urllib.request.urlopen(APACHE_URL, timeout=60) as r:
         (model_dir / "LICENSE-APACHE-2.0.txt").write_bytes(r.read())
 
